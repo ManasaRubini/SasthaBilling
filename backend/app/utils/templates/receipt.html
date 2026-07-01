@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Temple Receipt</title>
+
+</head>
+
+<body>
+
+<div class="receipt">
+
+    <!-- ===================================== -->
+    <!-- Temple Header -->
+    <!-- ===================================== -->
+
+    <div class="header">
+
+        <div class="om">
+            🕉
+        </div>
+
+        <h1>
+            செம்புகுட்டி சாஸ்தா திருக்கோவில்
+        </h1>
+
+        <h2>
+            Sembugutti Saastha Thirukoil
+        </h2>
+
+        <p>
+            Billing & Receipt Management System
+        </p>
+
+    </div>
+
+
+    <!-- ===================================== -->
+    <!-- Receipt Number -->
+    <!-- ===================================== -->
+
+    <div class="receipt-number">
+
+        <strong>
+
+            ரசீது எண் / RECEIPT NO
+
+        </strong>
+
+        <br>
+
+        {{ bill.receipt_no }}
+
+    </div>
+
+
+    <!-- ===================================== -->
+    <!-- Bill Information -->
+    <!-- ===================================== -->
+
+    <table class="details">
+
+        <tr>
+
+            <td>
+                தேதி / Date
+            </td>
+
+            <td>
+                {{ formatted_date }}
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>
+                பில் வகை / Bill Type
+            </td>
+
+            <td>
+                {{ bill.bill_type }}
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>
+                வகை / Category
+            </td>
+
+            <td>
+
+                {{ bill.category }}
+
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>
+
+                பணம் செலுத்தும் முறை
+
+            </td>
+
+            <td>
+
+                {{ bill.payment_method }}
+
+            </td>
+
+        </tr>
+
+        {% if bill.transaction_id %}
+
+        <tr>
+
+            <td>
+
+                Transaction ID
+
+            </td>
+
+            <td>
+
+                {{ bill.transaction_id }}
+
+            </td>
+
+        </tr>
+
+        {% endif %}
+
+    </table>
+
+
+    <!-- ===================================== -->
+    <!-- Devotee Section -->
+    <!-- ===================================== -->
+
+    <div class="section-title">
+
+        பக்தர் விவரம் / DEVOTEE DETAILS
+
+    </div>
+    <!-- ===================================== -->
+    <!-- Devotee Details -->
+    <!-- ===================================== -->
+
+    <table class="details">
+
+        <tr>
+
+            <td>
+
+                பெயர் / Name
+
+            </td>
+
+            <td>
+
+                {{ bill.devotee_name }}
+
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>
+
+                தந்தை பெயர்
+
+            </td>
+
+            <td>
+
+                {{ bill.father_name or "-" }}
+
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>
+
+                கைபேசி / Mobile
+
+            </td>
+
+            <td>
+
+                {{ bill.mobile or "-" }}
+
+            </td>
+
+        </tr>
+
+        <tr>
+
+            <td>
+
+                ஊர் / Village
+
+            </td>
+
+            <td>
+
+                {{ bill.village or "-" }}
+
+            </td>
+
+        </tr>
+
+    </table>
+
+
+    <!-- ===================================== -->
+    <!-- Amount -->
+    <!-- ===================================== -->
+
+    <div class="amount-card">
+
+        <div class="amount-title">
+
+            செலுத்திய தொகை / Amount Paid
+
+        </div>
+
+        <div class="amount">
+
+            ₹ {{ "%.2f"|format(bill.amount|float) }}
+
+        </div>
+
+        <div class="amount-words">
+
+            ( {{ amount_words }} )
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================== -->
+    <!-- Remarks -->
+    <!-- ===================================== -->
+
+    {% if bill.remarks %}
+
+    <div class="remarks">
+
+        <strong>
+
+            குறிப்பு :
+
+        </strong>
+
+        {{ bill.remarks }}
+
+    </div>
+
+    {% endif %}
+
+
+    <!-- ===================================== -->
+    <!-- Staff Information -->
+    <!-- ===================================== -->
+
+    <div class="section-title">
+
+        STAFF DETAILS
+
+    </div>
+
+    <table class="details">
+
+        <tr>
+
+            <td>
+
+                பணியாளர் / Staff
+
+            </td>
+
+            <td>
+
+                {{ bill.staff_name }}
+
+            </td>
+
+        </tr>
+
+    </table>
+    <!-- ===================================== -->
+    <!-- Signature Section -->
+    <!-- ===================================== -->
+
+    <div class="signature-section">
+
+        <div class="left">
+
+            <p>
+                Thank you for your contribution.
+            </p>
+
+            <p>
+                May Lord Sastha Bless You & Your Family.
+            </p>
+
+        </div>
+
+        <div class="right">
+
+            <div class="signature-line"></div>
+
+            <p>
+                Authorized Staff
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================== -->
+    <!-- Footer -->
+    <!-- ===================================== -->
+
+    <div class="footer">
+
+        <hr>
+
+        <p>
+
+            இந்த ரசீது கணினி மூலம் உருவாக்கப்பட்டது
+
+        </p>
+
+        <p>
+
+            This is a Computer Generated Receipt
+
+        </p>
+
+        <p>
+
+            No Signature Required
+
+        </p>
+
+        <div class="blessing">
+
+            🙏 தெய்வ ஆசி என்றும் உங்களுடன் இருப்பதாக 🙏
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

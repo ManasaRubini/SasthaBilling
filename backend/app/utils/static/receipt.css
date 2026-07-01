@@ -1,0 +1,354 @@
+@font-face {
+    font-family: "Tamil";
+    src: url("fonts/NotoSansTamil-Regular.ttf") format("truetype");
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    font-size:14px;
+}
+
+body{
+
+    font-family:"Tamil","Noto Sans Tamil",sans-serif;
+
+    color:#222;
+
+    background:white;
+
+    padding:12mm;
+}
+
+/* ====================================== */
+/* Receipt Container */
+/* ====================================== */
+
+.receipt{
+
+    width:100%;
+
+    border:2px solid #d97706;
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+    background:white;
+}
+
+/* ====================================== */
+/* Header */
+/* ====================================== */
+
+.header{
+
+    background:linear-gradient(180deg,#fffbeb,#fff7ed);
+
+    text-align:center;
+
+    padding:20px;
+
+    border-bottom:3px solid #d97706;
+}
+
+.om{
+
+    font-size:36px;
+
+    margin-bottom:6px;
+}
+
+.header h1{
+
+    color:#c2410c;
+
+    font-size:24px;
+
+    margin-bottom:4px;
+
+    font-weight:bold;
+}
+
+.header h2{
+
+    color:#555;
+
+    font-size:15px;
+
+    margin-bottom:4px;
+}
+
+.header p{
+
+    color:#777;
+
+    font-size:12px;
+}
+
+/* ====================================== */
+/* Receipt Number */
+/* ====================================== */
+
+.receipt-number{
+
+    margin:18px;
+
+    background:#ea580c;
+
+    color:white;
+
+    border-radius:8px;
+
+    padding:12px;
+
+    text-align:center;
+
+    font-size:17px;
+
+    font-weight:bold;
+}
+
+/* ====================================== */
+/* Section Title */
+/* ====================================== */
+
+.section-title{
+
+    background:#ca8a04;
+
+    color:white;
+
+    text-align:center;
+
+    font-weight:bold;
+
+    padding:10px;
+
+    margin:18px;
+
+    border-radius:6px;
+}
+/* ====================================== */
+/* Details Table */
+/* ====================================== */
+
+.details{
+
+    width:calc(100% - 36px);
+
+    margin:18px;
+
+    border-collapse:collapse;
+
+    font-size:13px;
+}
+
+.details td{
+
+    border:1px solid #dddddd;
+
+    padding:10px;
+
+    vertical-align:top;
+}
+
+.details td:first-child{
+
+    width:38%;
+
+    background:#fff8ef;
+
+    font-weight:bold;
+
+    color:#444;
+}
+
+.details tr:nth-child(even){
+
+    background:#fcfcfc;
+}
+
+
+/* ====================================== */
+/* Amount Card */
+/* ====================================== */
+
+.amount-card{
+
+    margin:18px;
+
+    border:3px solid #ea580c;
+
+    border-radius:12px;
+
+    background:#fff7ed;
+
+    text-align:center;
+
+    padding:18px;
+}
+
+.amount-title{
+
+    color:#666;
+
+    font-size:15px;
+
+    margin-bottom:10px;
+
+    font-weight:bold;
+}
+
+.amount{
+
+    font-size:34px;
+
+    font-weight:bold;
+
+    color:#c2410c;
+
+    margin-bottom:10px;
+}
+
+.amount-words{
+
+    font-size:13px;
+
+    color:#555;
+
+    font-style:italic;
+}
+
+
+/* ====================================== */
+/* Remarks */
+/* ====================================== */
+
+.remarks{
+
+    margin:18px;
+
+    padding:12px;
+
+    background:#fff8ef;
+
+    border-left:5px solid #ea580c;
+
+    border-radius:6px;
+
+    font-size:13px;
+}
+
+
+/* ====================================== */
+/* Signature Section */
+/* ====================================== */
+
+.signature-section{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:flex-end;
+
+    margin:30px 18px;
+}
+
+.signature-section .left{
+
+    width:55%;
+
+    font-size:13px;
+
+    color:#444;
+}
+
+.signature-section .left p{
+
+    margin-bottom:6px;
+}
+
+.signature-section .right{
+
+    width:35%;
+
+    text-align:center;
+}
+
+.signature-line{
+
+    border-top:1px solid #000;
+
+    margin-bottom:8px;
+
+    width:100%;
+}
+
+
+/* ====================================== */
+/* Footer */
+/* ====================================== */
+
+.footer{
+
+    margin-top:25px;
+
+    padding:15px;
+
+    border-top:2px solid #d97706;
+
+    text-align:center;
+
+    font-size:12px;
+
+    color:#555;
+}
+
+.footer p{
+
+    margin:5px 0;
+}
+
+.blessing{
+
+    margin-top:12px;
+
+    font-size:16px;
+
+    color:#c2410c;
+
+    font-weight:bold;
+}
+
+
+/* ====================================== */
+/* Print Settings */
+/* ====================================== */
+
+@page{
+
+    size:A5 portrait;
+
+    margin:8mm;
+}
+
+@media print{
+
+    body{
+
+        padding:0;
+    }
+
+    .receipt{
+
+        border:none;
+
+        box-shadow:none;
+    }
+}

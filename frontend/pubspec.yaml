@@ -1,0 +1,33 @@
+name: temple_billing_system
+description: "செம்புகுட்டி சாஸ்தா திருக்கோவில் - Temple Billing Management System"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
+  printing: ^5.12.0
+  path_provider: ^2.1.2
+  open_file: ^3.3.2
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: NotoSansTamil
+      fonts:
+        - asset: fonts/NotoSansTamil-Regular.ttf
+        - asset: fonts/NotoSansTamil-Bold.ttf
+          weight: 700
