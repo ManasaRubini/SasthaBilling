@@ -58,7 +58,75 @@ def read_excel(file_path):
         sys.exit(1)
 
     df = pd.read_excel(file_path)
-    # Clean headers
+    
+    # Try to detect vertical layout with serial numbers in first column
+    import re
+    first_col_vals = df.iloc[:, 0].dropna().tolist()
+    serial_count = 0
+    for v in first_col_vals[:20]:
+        try:
+            if isinstance(v, (int, float)) and int(v) < 1000:
+                serial_count += 1
+            elif str(v).strip().isdigit() and int(str(v).strip()) < 1000:
+                serial_count += 1
+        except:
+            pass
+            
+    if serial_count >= 3:
+        print("Detected vertical address book layout (repeating serial numbers). Parsing...")
+        devotees = []
+        cur = None
+        state = 'NONE'
+        
+        for val in df.iloc[:, 0].tolist():
+            if pd.isna(val):
+                continue
+            
+            is_serial = False
+            try:
+                if isinstance(val, (int, float)):
+                    if int(val) < 10000:
+                        is_serial = True
+                elif str(val).strip().isdigit() and int(str(val).strip()) < 10000:
+                    is_serial = True
+            except:
+                pass
+                
+            if is_serial:
+                if cur and cur.get('devotee_name'):
+                    devotees.append(cur)
+                cur = {
+                    'devotee_name': None,
+                    'father_name': None,
+                    'mobile': None,
+                    'address': None,
+                    'village': None,
+                    'family_id': None
+                }
+                state = 'NAME'
+            else:
+                if cur is None:
+                    continue
+                if state == 'NAME':
+                    cur['devotee_name'] = str(val).strip()
+                    state = 'DETAILS'
+                elif state == 'DETAILS':
+                    v_str = str(val).strip()
+                    if v_str.lower() in ['(blank)', 'blank', '-', 'nan']:
+                        continue
+                    
+                    dig = re.sub(r'\D', '', v_str)
+                    if len(dig) >= 9 and (len(dig) / len(v_str)) > 0.6:
+                        cur['mobile'] = v_str
+                    else:
+                        cur['address'] = (cur['address'] + ', ' + v_str) if cur['address'] else v_str
+                        
+        if cur and cur.get('devotee_name'):
+            devotees.append(cur)
+            
+        return devotees
+
+    # Clean headers for standard tabular files
     df.columns = [clean_header(str(c)) for c in df.columns]
     
     # Helper to find matching keys
@@ -71,6 +139,7 @@ def read_excel(file_path):
     name_col = get_column(["name", "devotee_name", "devotee name", "பெயர்"])
     if not name_col:
         print("[ERROR] Could not find a 'Name' or 'Devotee Name' column in the Excel file.")
+        print(f"Columns found in file: {list(df.columns)}")
         sys.exit(1)
 
     father_col = get_column(["father_name", "father name", "father", "தந்தை பெயர்"])
@@ -131,37 +200,43 @@ def main():
     
     db = SessionLocal()
     try:
-        success_count = 0
+        print("Fetching existing devotees from database to check duplicates...")
+        existing_devotees = db.query(Devotee.devotee_name, Devotee.mobile).all()
+        existing_combos = set((name, mobile) for name, mobile in existing_devotees)
+        existing_names = set(name for name, _ in existing_devotees)
+
+        print("Filtering records...")
+        to_insert = []
         for data in devotees_data:
-            # Check if devotee already exists (by name and mobile to avoid duplicates)
-            exists = False
-            if data["mobile"]:
-                exists = db.query(Devotee).filter(
-                    Devotee.devotee_name == data["devotee_name"],
-                    Devotee.mobile == data["mobile"]
-                ).first() is not None
+            name = data["devotee_name"]
+            mobile = data["mobile"]
+
+            if mobile:
+                if (name, mobile) in existing_combos:
+                    continue
             else:
-                exists = db.query(Devotee).filter(
-                    Devotee.devotee_name == data["devotee_name"]
-                ).first() is not None
+                if name in existing_names:
+                    continue
 
-            if exists:
-                # Skip duplicate
-                continue
+            to_insert.append(data)
 
-            devotee = Devotee(
-                devotee_name=data["devotee_name"],
-                father_name=data["father_name"],
-                mobile=data["mobile"],
-                address=data["address"],
-                village=data["village"],
-                family_id=data["family_id"]
-            )
-            db.add(devotee)
-            success_count += 1
-
-        db.commit()
-        print(f"\n[SUCCESS] Imported {success_count} new devotees successfully! (Skipped duplicates)")
+        success_count = len(to_insert)
+        if to_insert:
+            print(f"Uploading {success_count} records to database...")
+            for data in to_insert:
+                devotee = Devotee(
+                    devotee_name=data["devotee_name"],
+                    father_name=data["father_name"],
+                    mobile=data["mobile"],
+                    address=data["address"],
+                    village=data["village"],
+                    family_id=data["family_id"]
+                )
+                db.add(devotee)
+            db.commit()
+            print(f"\n[SUCCESS] Imported {success_count} new devotees successfully! (Skipped duplicates)")
+        else:
+            print("\n[INFO] All records in the Excel file are already present in the database. No new records to import.")
     except Exception as e:
         db.rollback()
         print(f"\n[ERROR] Database import failed: {e}")

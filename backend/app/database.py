@@ -8,6 +8,9 @@ DATABASE_URL = os.getenv(
     "postgres://dpg-d92cthnaqgkc73989dl0-a.render.com:5432/temple_billing"
 )
 
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
