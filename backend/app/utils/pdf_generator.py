@@ -334,7 +334,46 @@ REPORT_HTML_TEMPLATE = """<!DOCTYPE html>
 </body>
 </html>
 """
-def generate_receipt_pdf(bill_data: dict) -> bytes:
+def _run_via_subprocess(func_name: str, data: dict, report_type: str = None) -> bytes:
+    import subprocess
+    import json
+    import sys
+    import tempfile
+    
+    # Write data to a temp JSON file
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w", encoding="utf-8") as f:
+        json.dump({"data": data, "report_type": report_type}, f)
+        temp_json_path = f.name
+        
+    temp_pdf_path = temp_json_path + ".pdf"
+    
+    try:
+        # Call pdf_generator.py as a script
+        script_path = os.path.abspath(__file__)
+        result = subprocess.run(
+            [sys.executable, script_path, func_name, temp_json_path, temp_pdf_path],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"PDF generation subprocess failed with code {result.returncode}. Stderr: {result.stderr}")
+            
+        with open(temp_pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+        return pdf_bytes
+    finally:
+        # Cleanup temp files
+        for p in (temp_json_path, temp_pdf_path):
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                except Exception:
+                    pass
+def generate_receipt_pdf(bill_data: dict, force_local: bool = False) -> bytes:
+    import sys
+    if sys.platform == 'win32' and not force_local:
+        return _run_via_subprocess("generate_receipt_pdf", bill_data)
     # Handle date parsing
     bill_date = bill_data.get('bill_date', datetime.now())
     if isinstance(bill_date, str):
@@ -443,7 +482,10 @@ def amount_in_words(amount: float) -> str:
             return helper(n // 10000000) + " Crore" + (" " + helper(n % 10000000) if n % 10000000 else "")
     
     return helper(int_amount) + " Rupees Only"
-def generate_report_pdf(report_data: dict, report_type: str) -> bytes:
+def generate_report_pdf(report_data: dict, report_type: str, force_local: bool = False) -> bytes:
+    import sys
+    if sys.platform == 'win32' and not force_local:
+        return _run_via_subprocess("generate_report_pdf", report_data, report_type)
     headers = report_data.get('headers', [])
     rows = report_data.get('rows', [])
     
@@ -501,3 +543,34 @@ def generate_report_pdf(report_data: dict, report_type: str) -> bytes:
     finally:
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
+if __name__ == "__main__":
+    import sys
+    import json
+    
+    if len(sys.argv) < 4:
+        print("Usage: python pdf_generator.py [function_name] [json_input_path] [pdf_output_path]", file=sys.stderr)
+        sys.exit(1)
+        
+    func_name = sys.argv[1]
+    json_path = sys.argv[2]
+    pdf_path = sys.argv[3]
+    
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+            
+        if func_name == "generate_receipt_pdf":
+            pdf_bytes = generate_receipt_pdf(payload["data"], force_local=True)
+        elif func_name == "generate_report_pdf":
+            pdf_bytes = generate_report_pdf(payload["data"], payload["report_type"], force_local=True)
+        else:
+            print(f"Unknown function name: {func_name}", file=sys.stderr)
+            sys.exit(1)
+            
+        with open(pdf_path, "wb") as f:
+            f.write(pdf_bytes)
+        sys.exit(0)
+    except Exception as e:
+        import traceback
+        traceback.print_exc(file=sys.stderr)
+        sys.exit(1)
