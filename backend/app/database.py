@@ -5,7 +5,7 @@ import os
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:shyaam%400206%3F@localhost:5432/temple_billing"
+    "postgres://dpg-d92cthnaqgkc73989dl0-a.render.com:5432/temple_billing"
 )
 
 engine = create_engine(DATABASE_URL)
