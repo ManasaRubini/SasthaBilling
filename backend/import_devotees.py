@@ -2,6 +2,7 @@
 import os
 import sys
 import csv
+import re
 
 # Add current directory to python path to import app modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -168,7 +169,41 @@ def read_excel(file_path):
             "village": village if village != "nan" else None,
             "family_id": family_id if family_id != "nan" else None,
         })
-    return devotees
+def clean_mobile_and_extra(mobile_str, address_str):
+    if not mobile_str:
+        return None, address_str
+        
+    mobile_str = str(mobile_str).strip()
+    if len(mobile_str) <= 15:
+        return mobile_str, address_str
+        
+    # Split by common separators: space, comma, slash, semicolon
+    parts = re.split(r'[\s,/;]+', mobile_str)
+    first_num = None
+    extra_nums = []
+    
+    for p in parts:
+        p_clean = re.sub(r'\D', '', p)
+        if len(p_clean) >= 9:
+            if not first_num:
+                first_num = p
+            else:
+                extra_nums.append(p)
+        else:
+            if p.strip() and p.strip().lower() not in ['nan']:
+                extra_nums.append(p)
+                
+    if not first_num:
+        return mobile_str[:15], address_str
+        
+    if extra_nums:
+        extra_info = "Extra Phone: " + ", ".join(extra_nums)
+        if address_str and str(address_str).lower() != 'nan':
+            address_str = f"{address_str} ({extra_info})"
+        else:
+            address_str = extra_info
+            
+    return first_num[:15], address_str
 
 def main():
     if len(sys.argv) < 2:
@@ -208,8 +243,12 @@ def main():
         print("Filtering records...")
         to_insert = []
         for data in devotees_data:
+            # Clean mobile and append extra numbers to address
+            mobile, address = clean_mobile_and_extra(data["mobile"], data["address"])
+            data["mobile"] = mobile
+            data["address"] = address
+
             name = data["devotee_name"]
-            mobile = data["mobile"]
 
             if mobile:
                 if (name, mobile) in existing_combos:
