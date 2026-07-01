@@ -6,7 +6,7 @@ import '../models/models.dart';
 
 class ApiService {
   // Change this to your backend server address
-  static const String baseUrl = 'http://localhost:8000/api';
+  static const String baseUrl = 'https://sasthabilling.onrender.com/api';
 
   static String? _token;
 
@@ -56,6 +56,14 @@ class ApiService {
 
   static Future<void> logout() async {
     await clearToken();
+  }
+
+  static Future<User> getMe() async {
+    final res = await http.get(Uri.parse('$baseUrl/auth/me'), headers: _headers);
+    if (res.statusCode == 200) {
+      return User.fromJson(jsonDecode(res.body));
+    }
+    throw ApiException(_extractError(res));
   }
 
   // ---------- DASHBOARD ----------

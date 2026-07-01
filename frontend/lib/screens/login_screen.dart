@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/translation_service.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (_usernameController.text.trim().isEmpty || _passwordController.text.isEmpty) {
-      setState(() => _error = 'பயனர்பெயர் மற்றும் கடவுச்சொல் தேவை');
+      setState(() => _error = 'enter_username'.tr() + ' & ' + 'enter_password'.tr());
       return;
     }
     setState(() {
@@ -85,10 +86,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
+                  Text(
                     'செம்புகுட்டி சாஸ்தா\nதிருக்கோவில்',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.darkOrange,
@@ -96,16 +97,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Billing Management System',
-                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                  Text(
+                    'login_subtitle'.tr(),
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                   const SizedBox(height: 32),
                   TextField(
                     controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'பயனர்பெயர் / Username',
-                      prefixIcon: Icon(Icons.person_outline),
+                    decoration: InputDecoration(
+                      labelText: 'username'.tr(),
+                      prefixIcon: const Icon(Icons.person_outline),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -114,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     obscureText: _obscure,
                     onSubmitted: (_) => _login(),
                     decoration: InputDecoration(
-                      labelText: 'கடவுச்சொல் / Password',
+                      labelText: 'password'.tr(),
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
@@ -149,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 20,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                             )
-                          : const Text('உள்நுழைய / Login'),
+                          : Text('login_btn'.tr()),
                     ),
                   ),
                 ],

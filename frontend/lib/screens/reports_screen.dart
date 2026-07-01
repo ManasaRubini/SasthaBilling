@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/translation_service.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -63,7 +64,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
     return Scaffold(
       appBar: AppBar(
-        title: isWide ? null : const Text('அறிக்கைகள் / Reports'),
+        title: isWide ? null : Text('nav_reports'.tr()),
         automaticallyImplyLeading: false,
         toolbarHeight: isWide ? 0 : null,
         bottom: TabBar(
@@ -71,10 +72,10 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           labelColor: isWide ? AppTheme.darkOrange : Colors.white,
           unselectedLabelColor: isWide ? Colors.black54 : Colors.white70,
           indicatorColor: isWide ? AppTheme.saffron : Colors.white,
-          tabs: const [
-            Tab(text: 'தினசரி / Daily'),
-            Tab(text: 'மாதாந்திர / Monthly'),
-            Tab(text: 'பணியாளர் / Staff'),
+          tabs: [
+            Tab(text: 'daily_report'.tr()),
+            Tab(text: 'monthly_report'.tr()),
+            Tab(text: 'staff_report'.tr()),
           ],
         ),
         backgroundColor: isWide ? Colors.white : AppTheme.saffron,
@@ -110,40 +111,46 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _miniStat('மொத்தம்', '₹${(_dailyData!['total_amount'] ?? 0).toStringAsFixed(0)}', AppTheme.saffron)),
+              Expanded(child: _miniStat('total'.tr(), '₹${(_dailyData!['total_amount'] ?? 0).toStringAsFixed(0)}', AppTheme.saffron)),
               const SizedBox(width: 10),
-              Expanded(child: _miniStat('வரி', '₹${(_dailyData!['vari_amount'] ?? 0).toStringAsFixed(0)}', AppTheme.gold)),
+              Expanded(child: _miniStat('today_vari'.tr(), '₹${(_dailyData!['vari_amount'] ?? 0).toStringAsFixed(0)}', AppTheme.gold)),
               const SizedBox(width: 10),
-              Expanded(child: _miniStat('காணிக்கை', '₹${(_dailyData!['kanikkai_amount'] ?? 0).toStringAsFixed(0)}', AppTheme.darkOrange)),
+              Expanded(child: _miniStat('today_kanikkai'.tr(), '₹${(_dailyData!['kanikkai_amount'] ?? 0).toStringAsFixed(0)}', AppTheme.darkOrange)),
             ],
           ),
           const SizedBox(height: 20),
-          const Text('பணம் செலுத்தும் முறை வாரியாக', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text('payment_method'.tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _miniStat('பணம்', '₹${(_dailyData!['cash_amount'] ?? 0).toStringAsFixed(0)}', AppTheme.success)),
+              Expanded(child: _miniStat('cash'.tr(), '₹${(_dailyData!['cash_amount'] ?? 0).toStringAsFixed(0)}', AppTheme.success)),
               const SizedBox(width: 10),
-              Expanded(child: _miniStat('UPI', '₹${(_dailyData!['upi_amount'] ?? 0).toStringAsFixed(0)}', Colors.blue)),
+              Expanded(child: _miniStat('upi'.tr(), '₹${(_dailyData!['upi_amount'] ?? 0).toStringAsFixed(0)}', Colors.blue)),
               const SizedBox(width: 10),
-              Expanded(child: _miniStat('கார்டு', '₹${(_dailyData!['card_amount'] ?? 0).toStringAsFixed(0)}', Colors.purple)),
+              Expanded(child: _miniStat('card'.tr(), '₹${(_dailyData!['card_amount'] ?? 0).toStringAsFixed(0)}', Colors.purple)),
             ],
           ),
           const SizedBox(height: 24),
-          Text('ரசீதுகள் (${bills.length})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text('${'today_bills'.tr()} (${bills.length})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 10),
           if (bills.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 30),
-              child: Center(child: Text('இன்று பில்கள் இல்லை', style: TextStyle(color: Colors.black45))),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 30),
+              child: Center(child: Text('today_bills'.tr() + ': 0', style: const TextStyle(color: Colors.black45))),
             )
           else
             _table(
-              headers: const ['ரசீது எண்', 'பக்தர்', 'வகை', 'தொகை', 'பணியாளர்'],
+              headers: [
+                'receipt_no'.tr(),
+                'name'.tr(),
+                'type'.tr(),
+                'amount'.tr(),
+                'staff'.tr()
+              ],
               rows: bills.map<List<String>>((b) => [
                 b['receipt_no'].toString(),
                 b['devotee_name'].toString(),
-                b['bill_type'].toString(),
+                b['bill_type'].toString() == 'வரி' ? (Translation.currentLanguage == 'ta' ? 'வரி' : 'Tax') : (Translation.currentLanguage == 'ta' ? 'காணிக்கை' : 'Donation'),
                 '₹${(b['amount'] as num).toStringAsFixed(0)}',
                 b['staff_name'].toString(),
               ]).toList(),
@@ -166,25 +173,30 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _miniStat('மொத்தம்', '₹${(_monthlyData!['total_collection'] ?? 0).toStringAsFixed(0)}', AppTheme.saffron)),
+              Expanded(child: _miniStat('total'.tr(), '₹${(_monthlyData!['total_collection'] ?? 0).toStringAsFixed(0)}', AppTheme.saffron)),
               const SizedBox(width: 10),
-              Expanded(child: _miniStat('வரி', '₹${(_monthlyData!['vari_total'] ?? 0).toStringAsFixed(0)}', AppTheme.gold)),
+              Expanded(child: _miniStat('today_vari'.tr(), '₹${(_monthlyData!['vari_total'] ?? 0).toStringAsFixed(0)}', AppTheme.gold)),
               const SizedBox(width: 10),
-              Expanded(child: _miniStat('காணிக்கை', '₹${(_monthlyData!['kanikkai_total'] ?? 0).toStringAsFixed(0)}', AppTheme.darkOrange)),
+              Expanded(child: _miniStat('today_kanikkai'.tr(), '₹${(_monthlyData!['kanikkai_total'] ?? 0).toStringAsFixed(0)}', AppTheme.darkOrange)),
             ],
           ),
           const SizedBox(height: 24),
-          Text('நாள் வாரியான பகுப்பு (${daily.length} நாட்கள்)',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text('monthly_report'.tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 10),
           if (daily.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 30),
-              child: Center(child: Text('இந்த மாதம் தரவு இல்லை', style: TextStyle(color: Colors.black45))),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 30),
+              child: Center(child: Text('monthly_collection'.tr() + ': 0', style: const TextStyle(color: Colors.black45))),
             )
           else
             _table(
-              headers: const ['தேதி', 'பில்கள்', 'வரி', 'காணிக்கை', 'மொத்தம்'],
+              headers: [
+                'date'.tr(),
+                'today_bills'.tr(),
+                'today_vari'.tr(),
+                'today_kanikkai'.tr(),
+                'total'.tr()
+              ],
               rows: daily.map<List<String>>((d) => [
                 d['date'].toString(),
                 d['count'].toString(),
@@ -200,13 +212,15 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
 
   Widget _staffReportTab() {
     if (_staffData == null) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(30),
+          padding: const EdgeInsets.all(30),
           child: Text(
-            'பணியாளர் அறிக்கைகளை நிர்வாகி மட்டுமே பார்க்க முடியும்\n(Admin access required)',
+            Translation.currentLanguage == 'ta'
+                ? 'பணியாளர் அறிக்கைகளை நிர்வாகி மட்டுமே பார்க்க முடியும்'
+                : 'Only Administrators can view staff reports',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black45),
+            style: const TextStyle(color: Colors.black45),
           ),
         ),
       );
@@ -220,13 +234,19 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
           Text(_staffData!['date'] ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           if (staffList.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 30),
-              child: Center(child: Text('பணியாளர் தரவு இல்லை', style: TextStyle(color: Colors.black45))),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 30),
+              child: Center(child: Text('total_staff'.tr() + ': 0', style: const TextStyle(color: Colors.black45))),
             )
           else
             _table(
-              headers: const ['பணியாளர்', 'பில்கள்', 'வரி', 'காணிக்கை', 'மொத்தம்'],
+              headers: [
+                'staff'.tr(),
+                'today_bills'.tr(),
+                'today_vari'.tr(),
+                'today_kanikkai'.tr(),
+                'total'.tr()
+              ],
               rows: staffList.map<List<String>>((s) => [
                 s['staff_name'].toString(),
                 s['bill_count'].toString(),

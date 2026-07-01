@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/translation_service.dart';
 import '../models/models.dart';
 import 'receipt_preview_screen.dart';
 
@@ -81,12 +82,12 @@ class _BillingScreenState extends State<BillingScreen> {
 
   Future<void> _submitBill() async {
     if (_selectedDevotee == null) {
-      _showSnack('பக்தரைத் தேர்ந்தெடுக்கவும் / Please select a devotee', isError: true);
+      _showSnack('select_devotee'.tr(), isError: true);
       return;
     }
     final amount = double.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
-      _showSnack('சரியான தொகையை உள்ளிடவும் / Enter a valid amount', isError: true);
+      _showSnack('enter_amount'.tr(), isError: true);
       return;
     }
 
@@ -139,7 +140,7 @@ class _BillingScreenState extends State<BillingScreen> {
     final isWide = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
-      appBar: isWide ? null : AppBar(title: const Text('பில்லிங் / Billing')),
+      appBar: isWide ? null : AppBar(title: Text('nav_billing'.tr())),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: ConstrainedBox(
@@ -148,15 +149,15 @@ class _BillingScreenState extends State<BillingScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (isWide)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
-                    'பில்லிங் / New Bill',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.dark),
+                    'nav_billing'.tr(),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.dark),
                   ),
                 ),
               _sectionCard(
-                title: 'பக்தர் பெயர் / Devotee',
+                title: 'select_devotee'.tr(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -165,7 +166,7 @@ class _BillingScreenState extends State<BillingScreen> {
                       enabled: _selectedDevotee == null,
                       onChanged: _onSearchChanged,
                       decoration: InputDecoration(
-                        hintText: 'பெயர் அல்லது மொபைல் எண்ணைத் தட்டச்சு செய்யவும்...',
+                        hintText: 'search_devotee'.tr(),
                         prefixIcon: const Icon(Icons.search),
                         suffixIcon: _selectedDevotee != null
                             ? IconButton(icon: const Icon(Icons.close), onPressed: _clearDevotee)
@@ -238,17 +239,22 @@ class _BillingScreenState extends State<BillingScreen> {
               ),
               const SizedBox(height: 16),
               _sectionCard(
-                title: 'பில் விவரம் / Bill Details',
+                title: 'billing_title'.tr(),
                 child: Column(
                   children: [
                     Row(
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            initialValue: _billType,
-                            decoration: const InputDecoration(labelText: 'பில்லிங் வகை / Type'),
+                            value: _billType,
+                            decoration: InputDecoration(labelText: 'bill_type'.tr()),
                             items: _billTypes
-                                .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                                .map((t) {
+                                  String display = t;
+                                  if (t == 'வரி') display = Translation.currentLanguage == 'ta' ? 'வரி' : 'Tax (Vari)';
+                                  if (t == 'காணிக்கை') display = Translation.currentLanguage == 'ta' ? 'காணிக்கை' : 'Donation (Kanikkai)';
+                                  return DropdownMenuItem(value: t, child: Text(display));
+                                })
                                 .toList(),
                             onChanged: (v) => setState(() => _billType = v!),
                           ),
@@ -257,7 +263,7 @@ class _BillingScreenState extends State<BillingScreen> {
                         Expanded(
                           child: TextField(
                             controller: _categoryController,
-                            decoration: const InputDecoration(labelText: 'வகை / Category (optional)'),
+                            decoration: InputDecoration(labelText: '${'category'.tr()} (optional)'),
                           ),
                         ),
                       ],
@@ -267,10 +273,10 @@ class _BillingScreenState extends State<BillingScreen> {
                       controller: _amountController,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.darkOrange),
-                      decoration: const InputDecoration(
-                        labelText: 'தொகை / Amount',
+                      decoration: InputDecoration(
+                        labelText: 'amount'.tr(),
                         prefixText: '₹ ',
-                        prefixStyle: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.darkOrange),
+                        prefixStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.darkOrange),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -278,10 +284,17 @@ class _BillingScreenState extends State<BillingScreen> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            initialValue: _paymentMethod,
-                            decoration: const InputDecoration(labelText: 'பணம் செலுத்தும் முறை'),
+                            value: _paymentMethod,
+                            decoration: InputDecoration(labelText: 'payment_method'.tr()),
                             items: _paymentMethods
-                                .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                                .map((m) {
+                                  String display = m;
+                                  if (m == 'பணம்') display = 'cash'.tr();
+                                  if (m == 'UPI') display = 'upi'.tr();
+                                  if (m == 'கார்டு') display = 'card'.tr();
+                                  if (m == 'காசோலை') display = 'cheque'.tr();
+                                  return DropdownMenuItem(value: m, child: Text(display));
+                                })
                                 .toList(),
                             onChanged: (v) => setState(() => _paymentMethod = v!),
                           ),
@@ -290,7 +303,7 @@ class _BillingScreenState extends State<BillingScreen> {
                         Expanded(
                           child: TextField(
                             controller: _transactionController,
-                            decoration: const InputDecoration(labelText: 'பரிவர்த்தனை எண் (optional)'),
+                            decoration: InputDecoration(labelText: '${'transaction_id'.tr()} (optional)'),
                           ),
                         ),
                       ],
@@ -299,7 +312,7 @@ class _BillingScreenState extends State<BillingScreen> {
                     TextField(
                       controller: _remarksController,
                       maxLines: 2,
-                      decoration: const InputDecoration(labelText: 'குறிப்பு / Remarks (optional)'),
+                      decoration: InputDecoration(labelText: '${'remarks'.tr()} (optional)'),
                     ),
                   ],
                 ),
@@ -313,7 +326,7 @@ class _BillingScreenState extends State<BillingScreen> {
                   icon: _submitting
                       ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : const Icon(Icons.print),
-                  label: Text(_submitting ? 'உருவாக்குகிறது...' : 'ரசீது அச்சிடு / Generate Receipt',
+                  label: Text(_submitting ? 'loading'.tr() : 'generate_receipt'.tr(),
                       style: const TextStyle(fontSize: 16)),
                 ),
               ),

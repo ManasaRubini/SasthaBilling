@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/translation_service.dart';
 import '../models/models.dart';
 import 'devotee_form_screen.dart';
 import 'devotee_history_screen.dart';
@@ -57,13 +58,13 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('உறுதிப்படுத்தவும்'),
-        content: Text('${devotee.devoteeName} ஐ நீக்க விரும்புகிறீர்களா?'),
+        title: Text('confirm_delete'.tr()),
+        content: Text('${devotee.devoteeName}?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('இல்லை')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('cancel'.tr())),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('நீக்கு', style: TextStyle(color: AppTheme.error)),
+            child: Text('delete'.tr(), style: const TextStyle(color: AppTheme.error)),
           ),
         ],
       ),
@@ -95,12 +96,12 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
     final isWide = MediaQuery.of(context).size.width > 800;
 
     return Scaffold(
-      appBar: isWide ? null : AppBar(title: const Text('பக்தர்கள் / Devotees')),
+      appBar: isWide ? null : AppBar(title: Text('nav_devotees'.tr())),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openForm(),
         backgroundColor: AppTheme.saffron,
         icon: const Icon(Icons.add),
-        label: const Text('புதிய பக்தர்'),
+        label: Text('add_devotee'.tr()),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -108,19 +109,19 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (isWide)
-              const Padding(
-                padding: EdgeInsets.only(bottom: 16),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
                 child: Text(
-                  'பக்தர் மேலாண்மை / Devotee Management',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.dark),
+                  'devotees_title'.tr(),
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.dark),
                 ),
               ),
             TextField(
               controller: _searchController,
               onChanged: _onSearchChanged,
-              decoration: const InputDecoration(
-                hintText: 'பெயர், மொபைல் அல்லது ஊர் மூலம் தேடவும்...',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                hintText: 'search_placeholder'.tr(),
+                prefixIcon: const Icon(Icons.search),
               ),
             ),
             const SizedBox(height: 16),
@@ -146,10 +147,9 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
         children: [
           Icon(Icons.people_outline, size: 56, color: Colors.black.withOpacity(0.2)),
           const SizedBox(height: 12),
-          const Text('பக்தர்கள் இல்லை', style: TextStyle(color: Colors.black54, fontSize: 16)),
+          Text('total_devotees'.tr() + ': 0', style: const TextStyle(color: Colors.black54, fontSize: 16)),
           const SizedBox(height: 4),
-          const Text('புதிய பக்தரைச் சேர்க்க + பொத்தானை அழுத்தவும்',
-              style: TextStyle(color: Colors.black38, fontSize: 13)),
+          Text('add_devotee'.tr(), style: const TextStyle(color: Colors.black38, fontSize: 13)),
         ],
       ),
     );
@@ -166,12 +166,11 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            columns: const [
-              DataColumn(label: Text('பெயர் / Name')),
-              DataColumn(label: Text('தந்தை பெயர்')),
-              DataColumn(label: Text('மொபைல்')),
-              DataColumn(label: Text('ஊர்')),
-              DataColumn(label: Text('செயல்கள்')),
+            columns: [
+              DataColumn(label: Text('name'.tr())),
+              DataColumn(label: Text('mobile'.tr())),
+              DataColumn(label: Text('address'.tr())),
+              DataColumn(label: Text('history'.tr())),
             ],
             rows: _devotees.map((d) {
               return DataRow(cells: [
@@ -181,9 +180,19 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
                     MaterialPageRoute(builder: (_) => DevoteeHistoryScreen(devotee: d)),
                   ),
                 ),
-                DataCell(Text(d.fatherName ?? '-')),
                 DataCell(Text(d.mobile ?? '-')),
-                DataCell(Text(d.village ?? '-')),
+                DataCell(
+                  Container(
+                    constraints: const BoxConstraints(maxWidth: 280),
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      d.address ?? '-',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ),
                 DataCell(Row(
                   children: [
                     IconButton(
@@ -191,17 +200,17 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(builder: (_) => DevoteeHistoryScreen(devotee: d)),
                       ),
-                      tooltip: 'வரலாறு',
+                      tooltip: 'history'.tr(),
                     ),
                     IconButton(
                       icon: const Icon(Icons.edit, size: 20, color: AppTheme.saffron),
                       onPressed: () => _openForm(devotee: d),
-                      tooltip: 'திருத்து',
+                      tooltip: 'edit'.tr(),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, size: 20, color: AppTheme.error),
                       onPressed: () => _deleteDevotee(d),
-                      tooltip: 'நீக்கு',
+                      tooltip: 'delete'.tr(),
                     ),
                   ],
                 )),

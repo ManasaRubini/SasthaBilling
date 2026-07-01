@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/translation_service.dart';
 import 'login_screen.dart';
 import 'dashboard_screen.dart';
 import 'devotees_screen.dart';
 import 'billing_screen.dart';
 import 'reports_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,10 +20,11 @@ class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<_NavItem> _navItems = const [
-    _NavItem('முகப்பு', 'Dashboard', Icons.dashboard_outlined, Icons.dashboard),
-    _NavItem('பில்லிங்', 'Billing', Icons.receipt_long_outlined, Icons.receipt_long),
-    _NavItem('பக்தர்கள்', 'Devotees', Icons.people_outline, Icons.people),
-    _NavItem('அறிக்கைகள்', 'Reports', Icons.bar_chart_outlined, Icons.bar_chart),
+    _NavItem('nav_dashboard', Icons.dashboard_outlined, Icons.dashboard),
+    _NavItem('nav_billing', Icons.receipt_long_outlined, Icons.receipt_long),
+    _NavItem('nav_devotees', Icons.people_outline, Icons.people),
+    _NavItem('nav_reports', Icons.bar_chart_outlined, Icons.bar_chart),
+    _NavItem('nav_settings', Icons.settings_outlined, Icons.settings),
   ];
 
   Widget _buildScreen(int index) {
@@ -34,12 +37,35 @@ class _HomeScreenState extends State<HomeScreen> {
         return const DevoteesScreen();
       case 3:
         return const ReportsScreen();
+      case 4:
+        return const SettingsScreen();
       default:
         return const DashboardScreen();
     }
   }
 
   void _logout() async {
+    // Show confirmation dialog before logging out
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('logout'.tr()),
+        content: Text('confirm_logout'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('cancel'.tr()),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('yes'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
     await ApiService.logout();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
@@ -68,14 +94,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: AppTheme.goldGradient,
-                    child: const Column(
+                    child: Column(
                       children: [
-                        Text('🕉', style: TextStyle(fontSize: 28, color: Colors.white)),
-                        SizedBox(height: 6),
+                        const Text('🕉', style: TextStyle(fontSize: 28, color: Colors.white)),
+                        const SizedBox(height: 6),
                         Text(
-                          'செம்புகுட்டி சாஸ்தா\nதிருக்கோவில்',
+                          'temple_title'.tr(),
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -104,14 +130,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: selected ? AppTheme.darkOrange : Colors.black54,
                             ),
                             title: Text(
-                              item.tamilLabel,
+                              item.translationKey.tr(),
                               style: TextStyle(
                                 color: selected ? AppTheme.darkOrange : Colors.black87,
                                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                                 fontSize: 14,
                               ),
                             ),
-                            subtitle: Text(item.englishLabel, style: const TextStyle(fontSize: 11)),
                             onTap: () => setState(() => _selectedIndex = index),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
@@ -122,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Divider(height: 1),
                   ListTile(
                     leading: const Icon(Icons.logout, color: AppTheme.error),
-                    title: const Text('வெளியேறு', style: TextStyle(color: AppTheme.error, fontWeight: FontWeight.w600)),
+                    title: Text('logout'.tr(), style: const TextStyle(color: AppTheme.error, fontWeight: FontWeight.w600)),
                     onTap: _logout,
                   ),
                   const SizedBox(height: 8),
@@ -147,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
             .map((item) => NavigationDestination(
                   icon: Icon(item.icon),
                   selectedIcon: Icon(item.activeIcon, color: AppTheme.darkOrange),
-                  label: item.tamilLabel,
+                  label: item.translationKey.tr(),
                 ))
             .toList(),
       ),
@@ -156,9 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _NavItem {
-  final String tamilLabel;
-  final String englishLabel;
+  final String translationKey;
   final IconData icon;
   final IconData activeIcon;
-  const _NavItem(this.tamilLabel, this.englishLabel, this.icon, this.activeIcon);
+  const _NavItem(this.translationKey, this.icon, this.activeIcon);
 }

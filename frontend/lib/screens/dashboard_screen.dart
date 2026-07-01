@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/translation_service.dart';
 import '../models/models.dart';
 import '../widgets/stat_card.dart';
 
@@ -46,7 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: isWide
           ? null
-          : AppBar(title: const Text('முகப்பு / Dashboard')),
+          : AppBar(title: Text('nav_dashboard'.tr())),
       body: RefreshIndicator(
         onRefresh: _load,
         child: SingleChildScrollView(
@@ -56,11 +57,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (isWide)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
                   child: Text(
-                    'முகப்பு / Dashboard',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.dark),
+                    'nav_dashboard'.tr(),
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.dark),
                   ),
                 ),
               if (_loading)
@@ -78,7 +79,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(height: 8),
                         Text(_error!, style: const TextStyle(color: AppTheme.error)),
                         const SizedBox(height: 12),
-                        ElevatedButton(onPressed: _load, child: const Text('மீண்டும் முயற்சி')),
+                        ElevatedButton(onPressed: _load, child: Text('retry'.tr())),
                       ],
                     ),
                   ),
@@ -93,50 +94,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   childAspectRatio: 1.3,
                   children: [
                     StatCard(
-                      title: 'இன்று வசூல்',
-                      subtitle: "Today's Collection",
+                      title: 'today_collection'.tr(),
+                      subtitle: '',
                       value: '₹${_stats!.todayCollection.toStringAsFixed(2)}',
                       icon: Icons.account_balance_wallet,
                       color: AppTheme.saffron,
                     ),
                     StatCard(
-                      title: 'மொத்த வரி',
-                      subtitle: 'Total Tax (Today)',
+                      title: 'today_vari'.tr(),
+                      subtitle: '',
                       value: '₹${_stats!.todayVari.toStringAsFixed(2)}',
                       icon: Icons.request_quote,
                       color: AppTheme.gold,
                     ),
                     StatCard(
-                      title: 'மொத்த காணிக்கை',
-                      subtitle: 'Total Donation (Today)',
+                      title: 'today_kanikkai'.tr(),
+                      subtitle: '',
                       value: '₹${_stats!.todayKanikkai.toStringAsFixed(2)}',
                       icon: Icons.volunteer_activism,
                       color: AppTheme.darkOrange,
                     ),
                     StatCard(
-                      title: 'இன்று ரசீதுகள்',
-                      subtitle: "Today's Receipts",
+                      title: 'today_bills'.tr(),
+                      subtitle: '',
                       value: '${_stats!.todayBillsCount}',
                       icon: Icons.receipt_long,
                       color: AppTheme.success,
                     ),
                     StatCard(
-                      title: 'மொத்த பக்தர்கள்',
-                      subtitle: 'Total Devotees',
+                      title: 'total_devotees'.tr(),
+                      subtitle: '',
                       value: '${_stats!.totalDevotees}',
                       icon: Icons.people,
                       color: Colors.blueGrey,
                     ),
                     StatCard(
-                      title: 'மொத்த பணியாளர்கள்',
-                      subtitle: 'Total Staff',
+                      title: 'total_staff'.tr(),
+                      subtitle: '',
                       value: '${_stats!.totalStaff}',
                       icon: Icons.badge,
                       color: Colors.purple,
                     ),
                     StatCard(
-                      title: 'இந்த மாத வசூல்',
-                      subtitle: 'Monthly Collection',
+                      title: 'monthly_collection'.tr(),
+                      subtitle: '',
                       value: '₹${_stats!.monthlyCollection.toStringAsFixed(2)}',
                       icon: Icons.calendar_month,
                       color: AppTheme.darkOrange,
