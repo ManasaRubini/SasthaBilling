@@ -18,6 +18,7 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
   Map<String, dynamic>? _staffData;
   bool _loading = true;
   String? _error;
+  String? _selectedStaffFilter;
 
   @override
   void initState() {
@@ -131,30 +132,73 @@ class _ReportsScreenState extends State<ReportsScreen> with SingleTickerProvider
             ],
           ),
           const SizedBox(height: 24),
-          Text('${'today_bills'.tr()} (${bills.length})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${'today_bills'.tr()} (${bills.length})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              DropdownButton<String>(
+                value: _selectedStaffFilter ?? 'All',
+                style: const TextStyle(color: AppTheme.dark, fontSize: 13, fontWeight: FontWeight.w600),
+                underline: Container(
+                  height: 1,
+                  color: AppTheme.saffron,
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'All',
+                    child: Text(Translation.currentLanguage == 'ta' ? 'அனைத்து பணியாளர்கள்' : 'All Staff'),
+                  ),
+                  ...bills.map((b) => b['staff_name'].toString()).toSet().map((name) {
+                    return DropdownMenuItem(value: name, child: Text(name));
+                  }),
+                ],
+                onChanged: (val) {
+                  setState(() {
+                    _selectedStaffFilter = val == 'All' ? null : val;
+                  });
+                },
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
           if (bills.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 30),
               child: Center(child: Text('today_bills'.tr() + ': 0', style: const TextStyle(color: Colors.black45))),
             )
-          else
-            _table(
-              headers: [
-                'receipt_no'.tr(),
-                'name'.tr(),
-                'type'.tr(),
-                'amount'.tr(),
-                'staff'.tr()
-              ],
-              rows: bills.map<List<String>>((b) => [
-                b['receipt_no'].toString(),
-                b['devotee_name'].toString(),
-                b['bill_type'].toString() == 'வரி' ? (Translation.currentLanguage == 'ta' ? 'வரி' : 'Tax') : (Translation.currentLanguage == 'ta' ? 'காணிக்கை' : 'Donation'),
-                '₹${(b['amount'] as num).toStringAsFixed(0)}',
-                b['staff_name'].toString(),
-              ]).toList(),
+          else ...[
+            Builder(
+              builder: (context) {
+                final filtered = _selectedStaffFilter == null
+                    ? bills
+                    : bills.where((b) => b['staff_name'].toString() == _selectedStaffFilter).toList();
+                
+                if (filtered.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: Text('No bills for this staff / இந்த பணியாளருக்கு பில்கள் இல்லை')),
+                  );
+                }
+                
+                return _table(
+                  headers: [
+                    'receipt_no'.tr(),
+                    'name'.tr(),
+                    'type'.tr(),
+                    'amount'.tr(),
+                    'staff'.tr()
+                  ],
+                  rows: filtered.map<List<String>>((b) => [
+                    b['receipt_no'].toString(),
+                    b['devotee_name'].toString(),
+                    b['bill_type'].toString() == 'வரி' ? (Translation.currentLanguage == 'ta' ? 'வரி' : 'Tax') : (Translation.currentLanguage == 'ta' ? 'காணிக்கை' : 'Donation'),
+                    '₹${(b['amount'] as num).toStringAsFixed(0)}',
+                    b['staff_name'].toString(),
+                  ]).toList(),
+                );
+              }
             ),
+          ],
         ],
       ),
     );
