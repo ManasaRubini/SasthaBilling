@@ -16,7 +16,14 @@ if DATABASE_URL.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
     engine = create_engine(DATABASE_URL, connect_args=connect_args)
 else:
-    engine = create_engine(DATABASE_URL)
+    # Sensible pool settings for serverless Neon Postgres
+    engine = create_engine(
+        DATABASE_URL,
+        pool_size=5,
+        max_overflow=10,
+        pool_pre_ping=True,
+        pool_recycle=300
+    )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

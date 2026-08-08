@@ -1,7 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
+from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+import os
+import logging
+
+from app.database import engine, Base, get_db
 from app.routers import auth, devotees, bills, reports, staff
+
+logger = logging.getLogger("uvicorn.error")
 
 Base.metadata.create_all(bind=engine)
 
@@ -11,13 +20,32 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Secure CORS origins
+cors_origins_raw = os.getenv("CORS_ORIGINS", "*")
+if cors_origins_raw == "*":
+    origins = ["*"]
+    allow_credentials = False
+else:
+    origins = [o.strip() for o in cors_origins_raw.split(",") if o.strip()]
+    allow_credentials = True
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Global database exception masking
+@app.exception_handler(SQLAlchemyError)
+def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    # Log a secure server-side error without credentials
+    logger.error(f"Database error occurred: {type(exc).__name__}")
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "சேவையக தரவுத்தள பிழை (Internal database error occurred)"}
+    )
 
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(devotees.router, prefix="/api/devotees", tags=["Devotees"])
@@ -28,3 +56,16 @@ app.include_router(staff.router, prefix="/api/staff", tags=["Staff"])
 @app.get("/")
 def root():
     return {"message": "செம்புகுட்டி சாஸ்தா திருக்கோவில் - Temple Billing System"}
+
+@app.get("/api/health")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        # Secure database health check query
+        db.execute(text("SELECT 1"))
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error("Health check database query failed")
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "detail": "Database connection failed"}
+        )
