@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+import json
+
 from app.database import get_db
-from app.models.models import User, Bill
+from app.models.models import User, Bill, AuditLog
 from app.schemas.schemas import UserOut, UserUpdate
 from app.utils.auth import get_current_user, require_admin, get_password_hash
 
@@ -28,11 +30,28 @@ def update_staff(user_id: int, user_data: UserUpdate, db: Session = Depends(get_
     if not user:
         raise HTTPException(status_code=404, detail="பணியாளர் கண்டுபிடிக்கப்படவில்லை")
 
+    changes = {}
     for key, value in user_data.dict(exclude_unset=True).items():
-        setattr(user, key, value)
+        old_val = getattr(user, key)
+        if old_val != value:
+            changes[key] = {"old": str(old_val), "new": str(value)}
+            setattr(user, key, value)
 
     db.commit()
     db.refresh(user)
+
+    if changes:
+        audit = AuditLog(
+            user_id=current_user.user_id,
+            username=current_user.username,
+            action="update_staff",
+            entity="user",
+            entity_id=user.user_id,
+            details=json.dumps(changes)
+        )
+        db.add(audit)
+        db.commit()
+
     return user
 
 @router.put("/{user_id}/reset-password")
@@ -44,6 +63,19 @@ def reset_password(user_id: int, new_password: str, db: Session = Depends(get_db
 
     user.password_hash = get_password_hash(new_password)
     db.commit()
+
+    # Audit password reset
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        username=current_user.username,
+        action="reset_password",
+        entity="user",
+        entity_id=user.user_id,
+        details=f"Reset password for staff user: {user.username}"
+    )
+    db.add(audit)
+    db.commit()
+
     return {"message": "கடவுச்சொல் மீட்டமைக்கப்பட்டது"}
 
 @router.delete("/{user_id}")
@@ -55,11 +87,31 @@ def deactivate_staff(user_id: int, db: Session = Depends(get_db),
 
     user.is_active = False
     db.commit()
+
+    # Audit staff deactivation
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        username=current_user.username,
+        action="deactivate_staff",
+        entity="user",
+        entity_id=user.user_id,
+        details=f"Deactivated staff user: {user.username}"
+    )
+    db.add(audit)
+    db.commit()
+
     return {"message": "பணியாளர் செயலிழக்கப்பட்டார்"}
 
 @router.get("/{user_id}/history")
 def get_staff_history(user_id: int, db: Session = Depends(get_db),
                       current_user: User = Depends(get_current_user)):
+    # Restrict viewing history to admin or the user themselves
+    if current_user.role != "admin" and current_user.user_id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="பணியாளர் வரலாறு காண அனுமதி இல்லை (Access denied to view other staff history)"
+        )
+
     bills = db.query(Bill).filter(
         Bill.staff_id == user_id,
         Bill.status == "active"

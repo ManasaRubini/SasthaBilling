@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+import os
 
 from app.database import get_db
-from app.models.models import User
+from app.models.models import User, AuditLog
 from app.schemas.schemas import (
     LoginRequest,
     TokenResponse,
@@ -27,7 +28,6 @@ def authenticate_user(
     username: str,
     password: str,
 ):
-
     user = (
         db.query(User)
         .filter(User.username == username)
@@ -53,7 +53,6 @@ def authenticate_user(
 
 
 def build_token(user: User):
-
     token = create_access_token(
         {
             "sub": str(user.user_id),
@@ -79,7 +78,6 @@ def login(
     request: LoginRequest,
     db: Session = Depends(get_db),
 ):
-
     user = authenticate_user(
         db,
         request.username,
@@ -87,10 +85,28 @@ def login(
     )
 
     if user is None:
+        # Audit failed login
+        audit = AuditLog(
+            action="login_failed",
+            username=request.username,
+            details=f"Failed login attempt for username: {request.username}"
+        )
+        db.add(audit)
+        db.commit()
         raise HTTPException(
             status_code=401,
             detail="Invalid username or password",
         )
+
+    # Audit successful login
+    audit = AuditLog(
+        user_id=user.user_id,
+        username=user.username,
+        action="login_success",
+        details=f"Successful login for user: {user.username}"
+    )
+    db.add(audit)
+    db.commit()
 
     return build_token(user)
 
@@ -103,7 +119,6 @@ def login_oauth2(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-
     user = authenticate_user(
         db,
         form_data.username,
@@ -111,10 +126,28 @@ def login_oauth2(
     )
 
     if user is None:
+        # Audit failed login
+        audit = AuditLog(
+            action="login_failed",
+            username=form_data.username,
+            details=f"Failed OAuth2 login attempt for username: {form_data.username}"
+        )
+        db.add(audit)
+        db.commit()
         raise HTTPException(
             status_code=401,
             detail="Invalid username or password",
         )
+
+    # Audit successful login
+    audit = AuditLog(
+        user_id=user.user_id,
+        username=user.username,
+        action="login_success",
+        details=f"Successful OAuth2 login for user: {user.username}"
+    )
+    db.add(audit)
+    db.commit()
 
     return build_token(user)
 
@@ -138,7 +171,6 @@ def create_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin),
 ):
-
     existing = (
         db.query(User)
         .filter(User.username == user_data.username)
@@ -163,6 +195,18 @@ def create_user(
     db.commit()
     db.refresh(user)
 
+    # Audit staff creation
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        username=current_user.username,
+        action="create_staff",
+        entity="user",
+        entity_id=user.user_id,
+        details=f"Created staff user: {user.username} with role: {user.role}"
+    )
+    db.add(audit)
+    db.commit()
+
     return user
 
 
@@ -170,19 +214,20 @@ def create_user(
 def setup_admin(
     db: Session = Depends(get_db),
 ):
+    # Only allow setup if no admin user exists in the database
+    admin_exists = db.query(User).filter(User.role == "admin").count() > 0
+    if admin_exists:
+        raise HTTPException(
+            status_code=400,
+            detail="நிர்வாகி கணக்கு ஏற்கனவே உருவாக்கப்பட்டுள்ளது (Admin account already exists)"
+        )
 
-    existing = (
-        db.query(User)
-        .filter(User.username == "admin")
-        .first()
-    )
-
-    if existing:
-        return {"message": "Admin already exists"}
+    admin_username = os.getenv("ADMIN_USERNAME", "admin")
+    admin_password = os.getenv("ADMIN_PASSWORD", "temple@2024")
 
     admin = User(
-        username="admin",
-        password_hash=get_password_hash("temple@2024"),
+        username=admin_username,
+        password_hash=get_password_hash(admin_password),
         staff_name="நிர்வாகி",
         role="admin",
         mobile="9999999999",
@@ -190,9 +235,18 @@ def setup_admin(
 
     db.add(admin)
     db.commit()
+    db.refresh(admin)
+
+    # Audit setup admin action
+    audit = AuditLog(
+        action="setup_admin",
+        username=admin_username,
+        details="Initial administrator setup completed."
+    )
+    db.add(audit)
+    db.commit()
 
     return {
-        "message": "Admin created",
-        "username": "admin",
-        "password": "temple@2024",
+        "message": "நிர்வாகி கணக்கு வெற்றிகரமாக உருவாக்கப்பட்டது (Admin setup completed)",
+        "username": admin_username,
     }

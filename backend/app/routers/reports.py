@@ -4,7 +4,8 @@ from sqlalchemy import func, cast, Date
 from datetime import datetime, date, timedelta
 from typing import List, Optional
 from app.database import get_db
-from app.models.models import User, Devotee, Bill
+from app.models.models import User, Devotee, Bill, AuditLog
+from app.schemas.schemas import AuditLogOut
 from app.utils.auth import get_current_user, require_admin
 from app.utils.pdf_generator import generate_report_pdf
 
@@ -150,3 +151,12 @@ def export_daily_pdf(
     
     return Response(content=pdf, media_type="application/pdf",
                    headers={"Content-Disposition": f"attachment; filename=daily_report_{data['date']}.pdf"})
+
+@router.get("/audit-logs", response_model=List[AuditLogOut])
+def get_audit_logs(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    return db.query(AuditLog).order_by(AuditLog.timestamp.desc()).offset(skip).limit(limit).all()

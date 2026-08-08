@@ -9,10 +9,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.models import User
 
-SECRET_KEY = os.getenv(
-    "SECRET_KEY",
-    "temple_secret_key_change_in_production_2024"
-)
+import logging
+logger = logging.getLogger("uvicorn.error")
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    logger.warning("WARNING: SECRET_KEY environment variable is not set. Using fallback development key. Set SECRET_KEY in production!")
+    SECRET_KEY = "temple_secret_key_change_in_production_2024"
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 12

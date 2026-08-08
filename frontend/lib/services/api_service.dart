@@ -178,6 +178,25 @@ class ApiService {
     throw ApiException(_extractError(res));
   }
 
+  static Future<void> cancelBill(int billId) async {
+    final res = await http.delete(Uri.parse('$baseUrl/bills/$billId/cancel'), headers: _headers);
+    if (res.statusCode != 200) {
+      throw ApiException(_extractError(res));
+    }
+  }
+
+  static Future<Bill> updateBill(int billId, Map<String, dynamic> data) async {
+    final res = await http.patch(
+      Uri.parse('$baseUrl/bills/$billId'),
+      headers: _headers,
+      body: jsonEncode(data),
+    );
+    if (res.statusCode == 200) {
+      return Bill.fromJson(jsonDecode(res.body));
+    }
+    throw ApiException(_extractError(res));
+  }
+
   // ---------- REPORTS ----------
   static Future<Map<String, dynamic>> getDailyReport({String? date}) async {
     var uri = Uri.parse('$baseUrl/reports/daily');

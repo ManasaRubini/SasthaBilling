@@ -5,13 +5,18 @@ import os
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgres://dpg-d92cthnaqgkc73989dl0-a.render.com:5432/temple_billing"
+    "sqlite:///./temple_billing.db"
 )
 
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL)
+# SQLite-specific arguments needed for concurrency/threading
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+    engine = create_engine(DATABASE_URL, connect_args=connect_args)
+else:
+    engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

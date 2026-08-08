@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from typing import List, Optional
+import json
+
 from app.database import get_db
-from app.models.models import User, Devotee, Bill
+from app.models.models import User, Devotee, Bill, AuditLog
 from app.schemas.schemas import DevoteeCreate, DevoteeUpdate, DevoteeOut, BillOut
-from app.utils.auth import get_current_user
+from app.utils.auth import get_current_user, require_admin
 
 router = APIRouter()
 
@@ -44,6 +46,19 @@ def create_devotee(devotee_data: DevoteeCreate, db: Session = Depends(get_db),
     db.add(devotee)
     db.commit()
     db.refresh(devotee)
+    
+    # Audit devotee creation
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        username=current_user.username,
+        action="create_devotee",
+        entity="devotee",
+        entity_id=devotee.devotee_id,
+        details=f"Created devotee: {devotee.devotee_name}"
+    )
+    db.add(audit)
+    db.commit()
+    
     return devotee
 
 @router.put("/{devotee_id}", response_model=DevoteeOut)
@@ -54,16 +69,33 @@ def update_devotee(devotee_id: int, devotee_data: DevoteeUpdate,
     if not devotee:
         raise HTTPException(status_code=404, detail="பக்தர் கண்டுபிடிக்கப்படவில்லை")
     
+    changes = {}
     for key, value in devotee_data.dict(exclude_unset=True).items():
-        setattr(devotee, key, value)
+        old_val = getattr(devotee, key)
+        if old_val != value:
+            changes[key] = {"old": str(old_val), "new": str(value)}
+            setattr(devotee, key, value)
     
     db.commit()
     db.refresh(devotee)
+    
+    if changes:
+        audit = AuditLog(
+            user_id=current_user.user_id,
+            username=current_user.username,
+            action="update_devotee",
+            entity="devotee",
+            entity_id=devotee.devotee_id,
+            details=json.dumps(changes)
+        )
+        db.add(audit)
+        db.commit()
+        
     return devotee
 
 @router.delete("/{devotee_id}")
 def delete_devotee(devotee_id: int, db: Session = Depends(get_db),
-                   current_user: User = Depends(get_current_user)):
+                   current_user: User = Depends(require_admin)):
     devotee = db.query(Devotee).filter(Devotee.devotee_id == devotee_id).first()
     if not devotee:
         raise HTTPException(status_code=404, detail="பக்தர் கண்டுபிடிக்கப்படவில்லை")
@@ -78,6 +110,19 @@ def delete_devotee(devotee_id: int, db: Session = Depends(get_db),
 
     db.delete(devotee)
     db.commit()
+    
+    # Audit devotee deletion
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        username=current_user.username,
+        action="delete_devotee",
+        entity="devotee",
+        entity_id=devotee_id,
+        details=f"Deleted devotee: {devotee.devotee_name}"
+    )
+    db.add(audit)
+    db.commit()
+    
     return {"message": "பக்தர் நீக்கப்பட்டார்"}
 
 @router.get("/{devotee_id}/history", response_model=List[BillOut])

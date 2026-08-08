@@ -143,3 +143,25 @@ class StaffReport(BaseModel):
     vari_amount: Decimal
     kanikkai_amount: Decimal
     total_amount: Decimal
+
+class BillUpdate(BaseModel):
+    devotee_id: Optional[int] = None
+    bill_type: Optional[BillType] = None
+    category: Optional[str] = None
+    amount: Optional[Decimal] = None
+    payment_method: Optional[PaymentMethod] = None
+    transaction_id: Optional[str] = None
+    remarks: Optional[str] = None
+
+class AuditLogOut(BaseModel):
+    log_id: int
+    user_id: Optional[int] = None
+    username: Optional[str] = None
+    action: str
+    timestamp: datetime
+    entity: Optional[str] = None
+    entity_id: Optional[int] = None
+    details: Optional[str] = None
+
+    class Config:
+        from_attributes = True

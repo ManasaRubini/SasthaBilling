@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <title>Temple Receipt</title>
+    <style>
+        @font-face {
+            font-family: 'TamilFont';
+            src: url('data:font/ttf;charset=utf-8;base64,{{ font_base64 }}') format('truetype');
+        }
+        body {
+            font-family: 'TamilFont', 'Noto Sans Tamil', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #1A1A1A;
+            background-color: transparent;
+            font-size: 11px;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .container {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 5px;
+        }
+        .center {
+            text-align: center;
+        }
+        .om-symbol {
+            font-size: 24px;
+            margin-bottom: 2px;
+        }
+        .temple-title {
+            font-size: 16px;
+            color: #CC4400; /* DARK_ORANGE */
+            margin: 0 0 2px 0;
+            line-height: 18px;
+            font-weight: bold;
+        }
+        .temple-subtitle {
+            font-size: 10px;
+            color: #1A1A1A; /* DARK */
+            margin: 0 0 2px 0;
+        }
+        .divider-thick {
+            border: none;
+            height: 2px;
+            background-color: #FF6B00; /* SAFFRON */
+            margin: 8px 0;
+        }
+        .receipt-banner {
+            background-color: #FF6B00; /* SAFFRON */
+            color: white;
+            text-align: center;
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 8px;
+        }
+        .info-table {
+            background-color: #FFF8F0; /* CREAM */
+        }
+        .info-table td {
+            border: 0.5px solid #DDDDDD;
+            padding: 5px 6px;
+            vertical-align: middle;
+        }
+        .label-col {
+            width: 38%;
+            color: #555555;
+            font-size: 10px;
+        }
+        .value-col {
+            width: 62%;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .devotee-header {
+            background-color: #D4A017; /* GOLD */
+            color: white;
+            text-align: center;
+            padding: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 0;
+        }
+        .devotee-table {
+            background-color: white;
+            margin-top: 0;
+        }
+        .devotee-table td {
+            border: 0.5px solid #DDDDDD;
+            padding: 5px 6px;
+            vertical-align: middle;
+        }
+        .amount-box {
+            background-color: #FFE0B2; /* LIGHT_ORANGE */
+            border: 2px solid #FF6B00; /* SAFFRON */
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            font-size: 20px;
+            color: #CC4400; /* DARK_ORANGE */
+            font-weight: bold;
+            margin: 10px 0 4px 0;
+        }
+        .amount-words {
+            font-size: 10px;
+            color: #CC4400; /* DARK_ORANGE */
+            text-align: center;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+        .remarks {
+            font-size: 10px;
+            color: #555555;
+            margin-bottom: 8px;
+            background-color: #F5F5F5;
+            padding: 6px;
+            border-radius: 4px;
+            border-left: 3px solid #CCCCCC;
+        }
+        .divider-thin {
+            border: none;
+            height: 0.5px;
+            background-color: #CCCCCC;
+            margin: 8px 0;
+        }
+        .staff-table td {
+            padding: 3px 0;
+            vertical-align: middle;
+        }
+        .divider-footer {
+            border: none;
+            height: 1px;
+            background-color: #D4A017; /* GOLD */
+            margin: 10px 0 6px 0;
+        }
+        .footer-text {
+            font-size: 9px;
+            color: #666666;
+            text-align: center;
+            margin: 0 0 2px 0;
+        }
+        .blessing-text {
+            font-size: 11px;
+            color: #FF6B00; /* SAFFRON */
+            text-align: center;
+            margin-top: 6px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="center om-symbol">🕉</div>
+        <div class="center temple-title">செம்புகுட்டி சாஸ்தா திருக்கோவில்</div>
+        <div class="center temple-subtitle">Sembugutti Saastha Thirukoil</div>
+        <div class="center temple-subtitle">Billing & Receipt Management System</div>
+        
+        <hr class="divider-thick">
+        
+        <div class="receipt-banner">
+            ரசீது எண் / RECEIPT NO: {{ bill.receipt_no }}
+        </div>
+        
+        <table class="info-table">
+            <tr>
+                <td class="label-col">தேதி / Date</td>
+                <td class="value-col">{{ formatted_date }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">பில் வகை / Type</td>
+                <td class="value-col">{{ bill.bill_type }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">வகை / Category</td>
+                <td class="value-col">{{ bill.category or "-" }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">பணம் செலுத்தும் முறை / Method</td>
+                <td class="value-col">{{ bill.payment_method }}</td>
+            </tr>
+            {% if bill.transaction_id %}
+            <tr>
+                <td class="label-col">பரிவர்த்தனை எண் / Txn ID</td>
+                <td class="value-col">{{ bill.transaction_id }}</td>
+            </tr>
+            {% endif %}
+        </table>
+        
+        <div class="devotee-header">
+            பக்தர் விவரம் / DEVOTEE DETAILS
+        </div>
+        
+        <table class="devotee-table">
+            <tr>
+                <td class="label-col">பெயர் / Name</td>
+                <td class="value-col">{{ bill.devotee_name }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">தந்தை பெயர் / Father's Name</td>
+                <td class="value-col">{{ bill.father_name or "-" }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">கைபேசி / Mobile</td>
+                <td class="value-col">{{ bill.mobile or "-" }}</td>
+            </tr>
+            <tr>
+                <td class="label-col">ஊர் / Village</td>
+                <td class="value-col">{{ bill.village or "-" }}</td>
+            </tr>
+        </table>
+        
+        <div class="amount-box">
+            ₹ {{ "%.2f"|format(bill.amount|float) }}
+        </div>
+        
+        <div class="amount-words">
+            ({{ amount_words }})
+        </div>
+        
+        {% if bill.remarks %}
+        <div class="remarks">
+            குறிப்பு / Remarks: {{ bill.remarks }}
+        </div>
+        {% endif %}
+        
+        <hr class="divider-thin">
+        
+        <table class="staff-table">
+            <tr>
+                <td class="label-col">பணியாளர் / Staff:</td>
+                <td class="value-col">{{ bill.staff_name }}</td>
+            </tr>
+        </table>
+        
+        <hr class="divider-footer">
+        
+        <div class="footer-text">இந்த ரசீது கணினி மூலம் உருவாக்கப்பட்டது</div>
+        <div class="footer-text">This is a computer-generated receipt</div>
+        <div class="blessing-text">🙏 தெய்வ ஆசி உங்களுக்கு கிடைக்கட்டும் 🙏</div>
+    </div>
+</body>
+</html>

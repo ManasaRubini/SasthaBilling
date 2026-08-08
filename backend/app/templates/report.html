@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ report_type }}</title>
+    <style>
+        @font-face {
+            font-family: 'TamilFont';
+            src: url('data:font/ttf;charset=utf-8;base64,{{ font_base64 }}') format('truetype');
+        }
+        body {
+            font-family: 'TamilFont', sans-serif;
+            padding: 20px;
+            color: #222;
+            font-size: 11px;
+        }
+        h1 {
+            text-align: center;
+            color: #C2410C;
+            margin-bottom: 5px;
+        }
+        h3 {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #EA580C;
+            color: white;
+            padding: 10px;
+            border: 1px solid #CCC;
+            font-weight: bold;
+        }
+        td {
+            padding: 8px;
+            border: 1px solid #CCC;
+            text-align: center;
+        }
+        tr:nth-child(even) {
+            background: #FAFAFA;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: right;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>செம்புகுட்டி சாஸ்தா திருக்கோவில்</h1>
+    <h3>{{ report_type }}</h3>
+    <table>
+        <thead>
+            <tr>
+                {% for h in report.headers %}
+                <th>{{ h }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report.rows %}
+            <tr>
+                {% for col in row %}
+                <td>{{ col }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="footer">
+        Generated on {{ generated_on }}
+    </div>
+</body>
+</html>

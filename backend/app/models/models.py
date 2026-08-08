@@ -69,3 +69,17 @@ class Bill(Base):
 
     devotee = relationship("Devotee", back_populates="bills")
     staff = relationship("User", back_populates="bills")
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    log_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    username = Column(String(100), nullable=True)
+    action = Column(String(100), nullable=False)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    entity = Column(String(50), nullable=True)
+    entity_id = Column(Integer, nullable=True)
+    details = Column(Text, nullable=True)
+
+    user = relationship("User")

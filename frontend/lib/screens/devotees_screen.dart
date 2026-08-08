@@ -20,11 +20,20 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
   bool _loading = true;
   String? _error;
   Timer? _debounce;
+  User? _currentUser;
 
   @override
   void initState() {
     super.initState();
+    _loadProfile();
     _load();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final user = await ApiService.getMe();
+      setState(() => _currentUser = user);
+    } catch (_) {}
   }
 
   @override
@@ -207,11 +216,12 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
                       onPressed: () => _openForm(devotee: d),
                       tooltip: 'edit'.tr(),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, size: 20, color: AppTheme.error),
-                      onPressed: () => _deleteDevotee(d),
-                      tooltip: 'delete'.tr(),
-                    ),
+                    if (_currentUser?.isAdmin == true)
+                      IconButton(
+                        icon: const Icon(Icons.delete, size: 20, color: AppTheme.error),
+                        onPressed: () => _deleteDevotee(d),
+                        tooltip: 'delete'.tr(),
+                      ),
                   ],
                 )),
               ]);

@@ -2,11 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime
+from decimal import Decimal
 from typing import List
+import json
+
 from app.database import get_db
-from app.models.models import User, Devotee, Bill
-from app.schemas.schemas import BillCreate, BillOut, DashboardStats
-from app.utils.auth import get_current_user
+from app.models.models import User, Devotee, Bill, AuditLog
+from app.schemas.schemas import BillCreate, BillOut, DashboardStats, BillUpdate
+from app.utils.auth import get_current_user, require_admin
 from app.utils.receipt import generate_receipt_no
 from app.utils.pdf_generator import generate_receipt_pdf
 
@@ -70,6 +73,18 @@ def create_bill(bill_data: BillCreate, db: Session = Depends(get_db),
     db.commit()
     db.refresh(bill)
     
+    # Audit bill creation
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        username=current_user.username,
+        action="create_bill",
+        entity="bill",
+        entity_id=bill.bill_id,
+        details=f"Created bill: {bill.receipt_no} for devotee: {devotee.devotee_name} with amount: ₹{bill.amount}"
+    )
+    db.add(audit)
+    db.commit()
+    
     # Reload with relationships
     bill = db.query(Bill).filter(Bill.bill_id == bill.bill_id).first()
     return bill
@@ -80,6 +95,51 @@ def get_bill(bill_id: int, db: Session = Depends(get_db),
     bill = db.query(Bill).filter(Bill.bill_id == bill_id).first()
     if not bill:
         raise HTTPException(status_code=404, detail="பில் கண்டுபிடிக்கப்படவில்லை")
+    return bill
+
+@router.patch("/{bill_id}", response_model=BillOut)
+def update_bill(
+    bill_id: int,
+    bill_data: BillUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    bill = db.query(Bill).filter(Bill.bill_id == bill_id).first()
+    if not bill:
+        raise HTTPException(status_code=404, detail="பில் கண்டுபிடிக்கப்படவில்லை")
+        
+    changes = {}
+    for key, value in bill_data.dict(exclude_unset=True).items():
+        old_val = getattr(bill, key)
+        if isinstance(old_val, (float, int, Decimal)) and value is not None:
+            if float(old_val) == float(value):
+                continue
+        elif old_val == value:
+            continue
+            
+        changes[key] = {
+            "old": str(old_val) if old_val is not None else None,
+            "new": str(value) if value is not None else None
+        }
+        setattr(bill, key, value)
+        
+    if changes:
+        db.commit()
+        db.refresh(bill)
+        
+        audit = AuditLog(
+            user_id=current_user.user_id,
+            username=current_user.username,
+            action="edit_bill",
+            entity="bill",
+            entity_id=bill.bill_id,
+            details=json.dumps(changes)
+        )
+        db.add(audit)
+        db.commit()
+        
+    # Reload with relationships
+    bill = db.query(Bill).filter(Bill.bill_id == bill_id).first()
     return bill
 
 @router.get("/{bill_id}/receipt")
@@ -115,11 +175,24 @@ def download_receipt(bill_id: int, db: Session = Depends(get_db),
 
 @router.delete("/{bill_id}/cancel")
 def cancel_bill(bill_id: int, db: Session = Depends(get_db),
-                current_user: User = Depends(get_current_user)):
+                current_user: User = Depends(require_admin)):
     bill = db.query(Bill).filter(Bill.bill_id == bill_id).first()
     if not bill:
         raise HTTPException(status_code=404, detail="பில் கண்டுபிடிக்கப்படவில்லை")
     
     bill.status = "cancelled"
     db.commit()
+    
+    # Audit bill cancellation
+    audit = AuditLog(
+        user_id=current_user.user_id,
+        username=current_user.username,
+        action="cancel_bill",
+        entity="bill",
+        entity_id=bill.bill_id,
+        details=f"Cancelled bill receipt no: {bill.receipt_no}"
+    )
+    db.add(audit)
+    db.commit()
+    
     return {"message": "பில் ரத்து செய்யப்பட்டது"}
