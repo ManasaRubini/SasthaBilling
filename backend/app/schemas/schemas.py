@@ -171,3 +171,72 @@ class AuditLogOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Expense schemas
+class ExpenseCreate(BaseModel):
+    expense_date: datetime
+    category: str
+    description: str
+    amount: Decimal
+    payment_method: str
+    reference_no: Optional[str] = None
+    remarks: Optional[str] = None
+
+class ExpenseUpdate(BaseModel):
+    expense_date: Optional[datetime] = None
+    category: Optional[str] = None
+    description: Optional[str] = None
+    amount: Optional[Decimal] = None
+    payment_method: Optional[str] = None
+    reference_no: Optional[str] = None
+    remarks: Optional[str] = None
+    status: Optional[str] = None
+
+class ExpenseOut(BaseModel):
+    expense_id: int
+    expense_no: str
+    expense_date: datetime
+    category: str
+    description: str
+    amount: Decimal
+    payment_method: str
+    reference_no: Optional[str]
+    remarks: Optional[str]
+    status: str
+    created_by: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+
+# FinancialTransaction schemas
+class FinancialTransactionOut(BaseModel):
+    id: int
+    transaction_no: str
+    transaction_date: datetime
+    transaction_type: str
+    category: str
+    description: Optional[str]
+    amount: Decimal
+    payment_method: str
+    reference_number: Optional[str]
+    bill_id: Optional[int]
+    expense_id: Optional[int]
+    status: str
+    created_by: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+    remarks: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+class TransactionSummary(BaseModel):
+    from_date: datetime
+    to_date: datetime
+    total_income: Decimal
+    total_expense: Decimal
+    net_balance: Decimal
+    income_count: int
+    expense_count: int

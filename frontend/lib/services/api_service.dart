@@ -265,6 +265,108 @@ class ApiService {
     throw ApiException(_extractError(res));
   }
 
+  static Future<List<dynamic>> getTransactions({
+    DateTime? fromDate,
+    DateTime? toDate,
+    String? type,
+    String? category,
+    String? paymentMethod,
+    String? status,
+    int skip = 0,
+    int limit = 50,
+  }) async {
+    final queryParams = <String, String>{};
+    if (fromDate != null) queryParams['from_date'] = fromDate.toIso8601String();
+    if (toDate != null) queryParams['to_date'] = toDate.toIso8601String();
+    if (type != null) queryParams['transaction_type'] = type;
+    if (category != null) queryParams['category'] = category;
+    if (paymentMethod != null) queryParams['payment_method'] = paymentMethod;
+    if (status != null) queryParams['status'] = status;
+    queryParams['skip'] = skip.toString();
+    queryParams['limit'] = limit.toString();
+
+    final uri = Uri.parse('$baseUrl/finance/transactions').replace(queryParameters: queryParams);
+    final res = await http.get(uri, headers: _headers);
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as List<dynamic>;
+    }
+    throw ApiException(_extractError(res));
+  }
+
+  static Future<Map<String, dynamic>> getTransactionsSummary({
+    required DateTime fromDate,
+    required DateTime toDate,
+  }) async {
+    final queryParams = {
+      'from_date': fromDate.toIso8601String(),
+      'to_date': toDate.toIso8601String(),
+    };
+    final uri = Uri.parse('$baseUrl/finance/transactions/summary').replace(queryParameters: queryParams);
+    final res = await http.get(uri, headers: _headers);
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw ApiException(_extractError(res));
+  }
+
+  static Future<Map<String, dynamic>> createExpense({
+    required DateTime expenseDate,
+    required String category,
+    required String description,
+    required double amount,
+    required String paymentMethod,
+    String? referenceNo,
+    String? remarks,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/finance/expenses'),
+      headers: _headers,
+      body: jsonEncode({
+        'expense_date': expenseDate.toIso8601String(),
+        'category': category,
+        'description': description,
+        'amount': amount,
+        'payment_method': paymentMethod,
+        'reference_no': referenceNo,
+        'remarks': remarks,
+      }),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw ApiException(_extractError(res));
+  }
+
+  static Future<Map<String, dynamic>> updateExpense(
+    int expenseId,
+    Map<String, dynamic> data,
+  ) async {
+    final res = await http.patch(
+      Uri.parse('$baseUrl/finance/expenses/$expenseId'),
+      headers: _headers,
+      body: jsonEncode(data),
+    );
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw ApiException(_extractError(res));
+  }
+
+  static Future<Map<String, dynamic>> cancelExpense(
+    int expenseId, {
+    String? reason,
+  }) async {
+    final queryParams = reason != null ? {'reason': reason} : <String, String>{};
+    final uri = Uri.parse('$baseUrl/finance/expenses/$expenseId').replace(
+      queryParameters: queryParams.isNotEmpty ? queryParams : null,
+    );
+    final res = await http.delete(uri, headers: _headers);
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+    throw ApiException(_extractError(res));
+  }
+
   static String _extractError(http.Response res) {
     try {
       final data = jsonDecode(res.body);

@@ -8,6 +8,8 @@ import 'devotees_screen.dart';
 import 'billing_screen.dart';
 import 'reports_screen.dart';
 import 'settings_screen.dart';
+import 'transactions_screen.dart';
+import 'expenses_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,6 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _NavItem('nav_dashboard', Icons.dashboard_outlined, Icons.dashboard),
     _NavItem('nav_billing', Icons.receipt_long_outlined, Icons.receipt_long),
     _NavItem('nav_devotees', Icons.people_outline, Icons.people),
+    _NavItem('nav_transactions', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet),
+    _NavItem('nav_expenses', Icons.volunteer_activism_outlined, Icons.volunteer_activism),
     _NavItem('nav_reports', Icons.bar_chart_outlined, Icons.bar_chart),
     _NavItem('nav_settings', Icons.settings_outlined, Icons.settings),
   ];
@@ -36,8 +40,12 @@ class _HomeScreenState extends State<HomeScreen> {
       case 2:
         return const DevoteesScreen();
       case 3:
-        return const ReportsScreen();
+        return const TransactionsScreen();
       case 4:
+        return const ExpensesScreen();
+      case 5:
+        return const ReportsScreen();
+      case 6:
         return const SettingsScreen();
       default:
         return const DashboardScreen();

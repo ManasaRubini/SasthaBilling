@@ -7,12 +7,13 @@ from typing import List, Optional
 import json
 
 from app.database import get_db
-from app.models.models import User, Devotee, Bill, AuditLog
+from app.models.models import User, Devotee, Bill, AuditLog, FinancialTransaction, TransactionType, TransactionStatus
 from app.schemas.schemas import BillCreate, BillOut, DashboardStats, BillUpdate
 from app.utils.auth import get_current_user, require_admin
 from app.utils.receipt import generate_receipt_no
 from app.utils.pdf_generator import generate_receipt_pdf
 from app.utils.storage import upload_pdf_to_storage, download_pdf_from_storage
+from app.utils.finance import generate_transaction_no
 
 router = APIRouter()
 
@@ -73,6 +74,24 @@ def create_bill(bill_data: BillCreate, db: Session = Depends(get_db),
     db.add(bill)
     db.commit()
     db.refresh(bill)
+    
+    # Automatically log as INCOME transaction in database-level atomic flow
+    transaction = FinancialTransaction(
+        transaction_no=generate_transaction_no(db),
+        transaction_date=bill.bill_date,
+        transaction_type=TransactionType.income,
+        category=bill.category or ("வரி" if bill.bill_type.value == "வரி" or bill.bill_type == "வரி" else "காணிக்கை"),
+        description=f"Income from Bill {bill.receipt_no}",
+        amount=bill.amount,
+        payment_method=bill.payment_method.value if hasattr(bill.payment_method, 'value') else bill.payment_method,
+        reference_number=bill.receipt_no,
+        bill_id=bill.bill_id,
+        status=TransactionStatus.active,
+        created_by=current_user.user_id,
+        remarks=bill.remarks
+    )
+    db.add(transaction)
+    db.commit()
     
     # Audit bill creation
     audit = AuditLog(
@@ -155,10 +174,19 @@ def update_bill(
         db.commit()
         db.refresh(bill)
         
+        # Sync with transaction
+        transaction = db.query(FinancialTransaction).filter(FinancialTransaction.bill_id == bill.bill_id).first()
+        if transaction:
+            transaction.amount = bill.amount
+            transaction.category = bill.category or ("வரி" if bill.bill_type.value == "வரி" or bill.bill_type == "வரி" else "காணிக்கை")
+            transaction.payment_method = bill.payment_method.value if hasattr(bill.payment_method, 'value') else bill.payment_method
+            transaction.remarks = bill.remarks
+            db.commit()
+        
         audit = AuditLog(
             user_id=current_user.user_id,
             username=current_user.username,
-            action="edit_bill",
+            action="BILL_UPDATED",
             entity="bill",
             entity_id=bill.bill_id,
             details=json.dumps(changes)
@@ -225,11 +253,17 @@ def cancel_bill(bill_id: int, reason: Optional[str] = "Cancelled by Administrato
     bill.cancellation_reason = reason
     db.commit()
     
+    # Sync with transaction
+    transaction = db.query(FinancialTransaction).filter(FinancialTransaction.bill_id == bill.bill_id).first()
+    if transaction:
+        transaction.status = TransactionStatus.cancelled
+        db.commit()
+    
     # Audit bill cancellation
     audit = AuditLog(
         user_id=current_user.user_id,
         username=current_user.username,
-        action="cancel_bill",
+        action="BILL_CANCELLED",
         entity="bill",
         entity_id=bill.bill_id,
         details=f"Cancelled bill receipt no: {bill.receipt_no}. Reason: {reason}"

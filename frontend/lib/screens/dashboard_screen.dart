@@ -14,6 +14,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   DashboardStats? _stats;
+  Map<String, dynamic>? _todayFinance;
+  Map<String, dynamic>? _monthFinance;
   bool _loading = true;
   String? _error;
 
@@ -30,12 +32,92 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
     try {
       final stats = await ApiService.getDashboard();
-      setState(() => _stats = stats);
+      
+      final now = DateTime.now();
+      final todayStart = DateTime(now.year, now.month, now.day);
+      final monthStart = DateTime(now.year, now.month, 1);
+      
+      final todayFinance = await ApiService.getTransactionsSummary(
+        fromDate: todayStart,
+        toDate: now,
+      );
+      final monthFinance = await ApiService.getTransactionsSummary(
+        fromDate: monthStart,
+        toDate: now,
+      );
+      
+      setState(() {
+        _stats = stats;
+        _todayFinance = todayFinance;
+        _monthFinance = monthFinance;
+      });
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
       setState(() => _loading = false);
     }
+  }
+
+  Widget _buildFinancePeriodCard({
+    required String title,
+    required double income,
+    required double expense,
+    required double net,
+  }) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: Border.all(color: Colors.black.withOpacity(0.06)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black54),
+            ),
+            const Divider(height: 16),
+            _buildFinanceRow('income'.tr(), '+ ₹${income.toStringAsFixed(0)}', AppTheme.success),
+            const SizedBox(height: 8),
+            _buildFinanceRow('expense'.tr(), '- ₹${expense.toStringAsFixed(0)}', AppTheme.error),
+            const Divider(height: 16),
+            _buildFinanceRow(
+              'net_balance'.tr(), 
+              '₹${net.toStringAsFixed(0)}', 
+              net >= 0 ? AppTheme.saffron : AppTheme.error,
+              isBold: true,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFinanceRow(String label, String value, Color color, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12, 
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            color: isBold ? AppTheme.dark : Colors.black87,
+          ),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13, 
+            fontWeight: FontWeight.bold, 
+            color: color,
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -84,7 +166,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 )
-              else if (_stats != null)
+              else if (_stats != null) ...[
                 GridView.count(
                   crossAxisCount: crossAxisCount,
                   shrinkWrap: true,
@@ -144,6 +226,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 ),
+                
+                const SizedBox(height: 24),
+                const Text(
+                  'Financial Overview / நிதி மேலாண்மை',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.dark),
+                ),
+                const SizedBox(height: 12),
+                if (_todayFinance != null && _monthFinance != null)
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isMobile = constraints.maxWidth <= 600;
+                      if (isMobile) {
+                        return Column(
+                          children: [
+                            _buildFinancePeriodCard(
+                              title: "TODAY / இன்று",
+                              income: double.tryParse(_todayFinance!['total_income'].toString()) ?? 0,
+                              expense: double.tryParse(_todayFinance!['total_expense'].toString()) ?? 0,
+                              net: double.tryParse(_todayFinance!['net_balance'].toString()) ?? 0,
+                            ),
+                            const SizedBox(height: 12),
+                            _buildFinancePeriodCard(
+                              title: "THIS MONTH / இந்த மாதம்",
+                              income: double.tryParse(_monthFinance!['total_income'].toString()) ?? 0,
+                              expense: double.tryParse(_monthFinance!['total_expense'].toString()) ?? 0,
+                              net: double.tryParse(_monthFinance!['net_balance'].toString()) ?? 0,
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: _buildFinancePeriodCard(
+                              title: "TODAY / இன்று",
+                              income: double.tryParse(_todayFinance!['total_income'].toString()) ?? 0,
+                              expense: double.tryParse(_todayFinance!['total_expense'].toString()) ?? 0,
+                              net: double.tryParse(_todayFinance!['net_balance'].toString()) ?? 0,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildFinancePeriodCard(
+                              title: "THIS MONTH / இந்த மாதம்",
+                              income: double.tryParse(_monthFinance!['total_income'].toString()) ?? 0,
+                              expense: double.tryParse(_monthFinance!['total_expense'].toString()) ?? 0,
+                              net: double.tryParse(_monthFinance!['net_balance'].toString()) ?? 0,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+              ],
             ],
           ),
         ),
