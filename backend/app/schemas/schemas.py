@@ -112,6 +112,12 @@ class BillOut(BaseModel):
     bill_date: datetime
     devotee: Optional[DevoteeOut]
     staff: Optional[UserOut]
+    
+    # PDF storage & Cancellation details
+    pdf_storage_key: Optional[str] = None
+    cancelled_at: Optional[datetime] = None
+    cancelled_by: Optional[int] = None
+    cancellation_reason: Optional[str] = None
 
     class Config:
         from_attributes = True

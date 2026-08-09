@@ -57,6 +57,11 @@ app.include_router(staff.router, prefix="/api/staff", tags=["Staff"])
 def root():
     return {"message": "செம்புகுட்டி சாஸ்தா திருக்கோவில் - Temple Billing System"}
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+@app.get("/health/db")
 @app.get("/api/health")
 def health_check(db: Session = Depends(get_db)):
     try:

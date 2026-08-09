@@ -55,20 +55,27 @@ class Bill(Base):
 
     bill_id = Column(Integer, primary_key=True, index=True)
     receipt_no = Column(String(20), unique=True, nullable=False, index=True)
-    devotee_id = Column(Integer, ForeignKey("devotees.devotee_id"), nullable=False)
-    staff_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    devotee_id = Column(Integer, ForeignKey("devotees.devotee_id"), nullable=False, index=True)
+    staff_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
     bill_type = Column(Enum(BillType), nullable=False)
     category = Column(String(100))
     amount = Column(Numeric(10, 2), nullable=False)
     payment_method = Column(Enum(PaymentMethod), default=PaymentMethod.cash)
-    transaction_id = Column(String(100))
+    transaction_id = Column(String(100), index=True)
     remarks = Column(Text)
-    status = Column(Enum(BillStatus), default=BillStatus.active)
-    bill_date = Column(DateTime(timezone=True), server_default=func.now())
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(Enum(BillStatus), default=BillStatus.active, index=True)
+    bill_date = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+    # PDF storage & Cancellation details
+    pdf_storage_key = Column(String(255), nullable=True)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    cancelled_by = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    cancellation_reason = Column(String(255), nullable=True)
 
     devotee = relationship("Devotee", back_populates="bills")
-    staff = relationship("User", back_populates="bills")
+    staff = relationship("User", back_populates="bills", foreign_keys=[staff_id])
+    cancelled_by_user = relationship("User", foreign_keys=[cancelled_by])
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -77,7 +84,7 @@ class AuditLog(Base):
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=True)
     username = Column(String(100), nullable=True)
     action = Column(String(100), nullable=False)
-    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     entity = Column(String(50), nullable=True)
     entity_id = Column(Integer, nullable=True)
     details = Column(Text, nullable=True)

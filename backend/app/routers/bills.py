@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime
 from decimal import Decimal
-from typing import List
+from typing import List, Optional
 import json
 
 from app.database import get_db
@@ -12,6 +12,7 @@ from app.schemas.schemas import BillCreate, BillOut, DashboardStats, BillUpdate
 from app.utils.auth import get_current_user, require_admin
 from app.utils.receipt import generate_receipt_no
 from app.utils.pdf_generator import generate_receipt_pdf
+from app.utils.storage import upload_pdf_to_storage, download_pdf_from_storage
 
 router = APIRouter()
 
@@ -85,6 +86,33 @@ def create_bill(bill_data: BillCreate, db: Session = Depends(get_db),
     db.add(audit)
     db.commit()
     
+    # Generate and upload PDF to Object Storage
+    try:
+        bill_dict = {
+            "receipt_no": bill.receipt_no,
+            "bill_date": bill.bill_date,
+            "bill_type": bill.bill_type.value if hasattr(bill.bill_type, 'value') else bill.bill_type,
+            "category": bill.category or "-",
+            "amount": float(bill.amount),
+            "payment_method": bill.payment_method.value if hasattr(bill.payment_method, 'value') else bill.payment_method,
+            "transaction_id": bill.transaction_id,
+            "remarks": bill.remarks,
+            "devotee_name": devotee.devotee_name,
+            "father_name": devotee.father_name or "-",
+            "mobile": devotee.mobile or "-",
+            "village": devotee.village or "-",
+            "staff_name": current_user.staff_name,
+        }
+        pdf_bytes = generate_receipt_pdf(bill_dict)
+        storage_key = upload_pdf_to_storage(pdf_bytes, f"receipt_{bill.receipt_no}.pdf")
+        if storage_key:
+            bill.pdf_storage_key = storage_key
+            db.commit()
+    except Exception as e:
+        import logging
+        logger = logging.getLogger("uvicorn.error")
+        logger.error(f"Failed to upload PDF bill to storage: {e}")
+    
     # Reload with relationships
     bill = db.query(Bill).filter(Bill.bill_id == bill.bill_id).first()
     return bill
@@ -149,13 +177,24 @@ def download_receipt(bill_id: int, db: Session = Depends(get_db),
     if not bill:
         raise HTTPException(status_code=404, detail="பில் கண்டுபிடிக்கப்படவில்லை")
     
+    # Try fetching from object storage
+    if bill.pdf_storage_key:
+        pdf_bytes = download_pdf_from_storage(bill.pdf_storage_key)
+        if pdf_bytes:
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": f"attachment; filename=receipt_{bill.receipt_no}.pdf"}
+            )
+            
+    # Fallback: generate on the fly
     bill_data = {
         "receipt_no": bill.receipt_no,
         "bill_date": bill.bill_date,
-        "bill_type": bill.bill_type,
+        "bill_type": bill.bill_type.value if hasattr(bill.bill_type, 'value') else bill.bill_type,
         "category": bill.category or "-",
         "amount": float(bill.amount),
-        "payment_method": bill.payment_method,
+        "payment_method": bill.payment_method.value if hasattr(bill.payment_method, 'value') else bill.payment_method,
         "transaction_id": bill.transaction_id,
         "remarks": bill.remarks,
         "devotee_name": bill.devotee.devotee_name,
@@ -174,13 +213,16 @@ def download_receipt(bill_id: int, db: Session = Depends(get_db),
     )
 
 @router.delete("/{bill_id}/cancel")
-def cancel_bill(bill_id: int, db: Session = Depends(get_db),
-                current_user: User = Depends(require_admin)):
+def cancel_bill(bill_id: int, reason: Optional[str] = "Cancelled by Administrator", db: Session = Depends(get_db),
+                 current_user: User = Depends(require_admin)):
     bill = db.query(Bill).filter(Bill.bill_id == bill_id).first()
     if not bill:
         raise HTTPException(status_code=404, detail="பில் கண்டுபிடிக்கப்படவில்லை")
     
     bill.status = "cancelled"
+    bill.cancelled_at = datetime.now()
+    bill.cancelled_by = current_user.user_id
+    bill.cancellation_reason = reason
     db.commit()
     
     # Audit bill cancellation
@@ -190,7 +232,7 @@ def cancel_bill(bill_id: int, db: Session = Depends(get_db),
         action="cancel_bill",
         entity="bill",
         entity_id=bill.bill_id,
-        details=f"Cancelled bill receipt no: {bill.receipt_no}"
+        details=f"Cancelled bill receipt no: {bill.receipt_no}. Reason: {reason}"
     )
     db.add(audit)
     db.commit()
