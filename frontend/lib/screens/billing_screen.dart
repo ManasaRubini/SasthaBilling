@@ -242,31 +242,62 @@ class _BillingScreenState extends State<BillingScreen> {
                 title: 'billing_title'.tr(),
                 child: Column(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _billType,
-                            decoration: InputDecoration(labelText: 'bill_type'.tr()),
-                            items: _billTypes
-                                .map((t) {
-                                  String display = t;
-                                  if (t == 'வரி') display = Translation.currentLanguage == 'ta' ? 'வரி' : 'Tax (Vari)';
-                                  if (t == 'காணிக்கை') display = Translation.currentLanguage == 'ta' ? 'காணிக்கை' : 'Donation (Kanikkai)';
-                                  return DropdownMenuItem(value: t, child: Text(display));
-                                })
-                                .toList(),
-                            onChanged: (v) => setState(() => _billType = v!),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _categoryController,
-                            decoration: InputDecoration(labelText: '${'category'.tr()} (optional)'),
-                          ),
-                        ),
-                      ],
+                    Builder(
+                      builder: (context) {
+                        final isMobile = MediaQuery.of(context).size.width <= 600;
+                        if (isMobile) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              DropdownButtonFormField<String>(
+                                value: _billType,
+                                decoration: InputDecoration(labelText: 'bill_type'.tr()),
+                                items: _billTypes
+                                    .map((t) {
+                                      String display = t;
+                                      if (t == 'வரி') display = Translation.currentLanguage == 'ta' ? 'வரி' : 'Tax (Vari)';
+                                      if (t == 'காணிக்கை') display = Translation.currentLanguage == 'ta' ? 'காணிக்கை' : 'Donation (Kanikkai)';
+                                      return DropdownMenuItem(value: t, child: Text(display));
+                                    })
+                                    .toList(),
+                                onChanged: (v) => setState(() => _billType = v!),
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: _categoryController,
+                                decoration: InputDecoration(labelText: '${'category'.tr()} (optional)'),
+                              ),
+                            ],
+                          );
+                        } else {
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: _billType,
+                                  decoration: InputDecoration(labelText: 'bill_type'.tr()),
+                                  items: _billTypes
+                                      .map((t) {
+                                        String display = t;
+                                        if (t == 'வரி') display = Translation.currentLanguage == 'ta' ? 'வரி' : 'Tax (Vari)';
+                                        if (t == 'காணிக்கை') display = Translation.currentLanguage == 'ta' ? 'காணிக்கை' : 'Donation (Kanikkai)';
+                                        return DropdownMenuItem(value: t, child: Text(display));
+                                      })
+                                      .toList(),
+                                  onChanged: (v) => setState(() => _billType = v!),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  controller: _categoryController,
+                                  decoration: InputDecoration(labelText: '${'category'.tr()} (optional)'),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                      }
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -280,33 +311,66 @@ class _BillingScreenState extends State<BillingScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: _paymentMethod,
-                            decoration: InputDecoration(labelText: 'payment_method'.tr()),
-                            items: _paymentMethods
-                                .map((m) {
-                                  String display = m;
-                                  if (m == 'பணம்') display = 'cash'.tr();
-                                  if (m == 'UPI') display = 'upi'.tr();
-                                  if (m == 'கார்டு') display = 'card'.tr();
-                                  if (m == 'காசோலை') display = 'cheque'.tr();
-                                  return DropdownMenuItem(value: m, child: Text(display));
-                                })
-                                .toList(),
-                            onChanged: (v) => setState(() => _paymentMethod = v!),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: _transactionController,
-                            decoration: InputDecoration(labelText: '${'transaction_id'.tr()} (optional)'),
-                          ),
-                        ),
-                      ],
+                    Builder(
+                      builder: (context) {
+                        final isMobile = MediaQuery.of(context).size.width <= 600;
+                        if (isMobile) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              DropdownButtonFormField<String>(
+                                value: _paymentMethod,
+                                decoration: InputDecoration(labelText: 'payment_method'.tr()),
+                                items: _paymentMethods
+                                    .map((m) {
+                                      String display = m;
+                                      if (m == 'பணம்') display = 'cash'.tr();
+                                      if (m == 'UPI') display = 'upi'.tr();
+                                      if (m == 'கார்டு') display = 'card'.tr();
+                                      if (m == 'காசோலை') display = 'cheque'.tr();
+                                      return DropdownMenuItem(value: m, child: Text(display));
+                                    })
+                                    .toList(),
+                                onChanged: (v) => setState(() => _paymentMethod = v!),
+                              ),
+                              const SizedBox(height: 16),
+                              TextField(
+                                controller: _transactionController,
+                                decoration: InputDecoration(labelText: '${'transaction_id'.tr()} (optional)'),
+                              ),
+                            ],
+                          );
+                        } else {
+                          return Row(
+                            children: [
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  value: _paymentMethod,
+                                  decoration: InputDecoration(labelText: 'payment_method'.tr()),
+                                  items: _paymentMethods
+                                      .map((m) {
+                                        String display = m;
+                                        if (m == 'பணம்') display = 'cash'.tr();
+                                        if (m == 'UPI') display = 'upi'.tr();
+                                        if (m == 'கார்டு') display = 'card'.tr();
+                                        if (m == 'காசோலை') display = 'cheque'.tr();
+                                        return DropdownMenuItem(value: m, child: Text(display));
+                                      })
+                                      .toList(),
+                                  onChanged: (v) => setState(() => _paymentMethod = v!),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextField(
+                                  controller: _transactionController,
+                                  decoration: InputDecoration(labelText: '${'transaction_id'.tr()} (optional)'),
+                                ),
+                              ),
+                            ],
+                          );
+                        }
+                      }
                     ),
                     const SizedBox(height: 16),
                     TextField(

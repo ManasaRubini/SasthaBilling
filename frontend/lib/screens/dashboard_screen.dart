@@ -91,7 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   mainAxisSpacing: 16,
                   crossAxisSpacing: 16,
-                  childAspectRatio: 1.3,
+                  childAspectRatio: MediaQuery.of(context).size.width > 600 ? 1.35 : 1.1,
                   children: [
                     StatCard(
                       title: 'today_collection'.tr(),
