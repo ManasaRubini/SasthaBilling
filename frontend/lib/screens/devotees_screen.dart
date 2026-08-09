@@ -141,7 +141,7 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
                       ? Center(child: Text(_error!, style: const TextStyle(color: AppTheme.error)))
                       : _devotees.isEmpty
                           ? _emptyState()
-                          : _buildTable(),
+                          : (MediaQuery.of(context).size.width > 600 ? _buildTable() : _buildCardList()),
             ),
           ],
         ),
@@ -229,6 +229,92 @@ class _DevoteesScreenState extends State<DevoteesScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildCardList() {
+    return ListView.builder(
+      itemCount: _devotees.length,
+      itemBuilder: (context, index) {
+        final d = _devotees[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: AppTheme.lightOrange,
+                      child: Text(
+                        d.devoteeName.isNotEmpty ? d.devoteeName[0] : '?',
+                        style: const TextStyle(color: AppTheme.darkOrange, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            d.devoteeName,
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.dark),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            [d.mobile, d.village].where((e) => e != null && e.isNotEmpty).join(' · '),
+                            style: const TextStyle(fontSize: 13, color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (d.address != null && d.address!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    d.address!,
+                    style: const TextStyle(fontSize: 13, color: Colors.black45),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const Divider(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => DevoteeHistoryScreen(devotee: d)),
+                      ),
+                      icon: const Icon(Icons.history, size: 18, color: AppTheme.gold),
+                      label: Text('history'.tr(), style: const TextStyle(color: AppTheme.gold)),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () => _openForm(devotee: d),
+                      icon: const Icon(Icons.edit, size: 18, color: AppTheme.saffron),
+                      label: Text('edit'.tr(), style: const TextStyle(color: AppTheme.saffron)),
+                    ),
+                    if (_currentUser?.isAdmin == true) ...[
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: () => _deleteDevotee(d),
+                        icon: const Icon(Icons.delete, size: 18, color: AppTheme.error),
+                        label: Text('delete'.tr(), style: const TextStyle(color: AppTheme.error)),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

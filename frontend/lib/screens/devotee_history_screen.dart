@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
+import '../services/translation_service.dart';
 import '../models/models.dart';
 import 'receipt_preview_screen.dart';
 
@@ -96,46 +97,7 @@ class _DevoteeHistoryScreenState extends State<DevoteeHistoryScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(color: Colors.black.withOpacity(0.06)),
                                   ),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: isVari ? AppTheme.lightOrange : AppTheme.gold.withOpacity(0.2),
-                                      child: Icon(
-                                        isVari ? Icons.request_quote : Icons.volunteer_activism,
-                                        color: isVari ? AppTheme.darkOrange : AppTheme.gold,
-                                        size: 20,
-                                      ),
-                                    ),
-                                    title: Text('${bill.billType} - ₹${bill.amount.toStringAsFixed(2)}',
-                                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    subtitle: Text(
-                                      '${_formatDate(bill.billDate)} · ${bill.receiptNo}\n${bill.paymentMethod}${bill.category != null ? ' · ${bill.category}' : ''}',
-                                    ),
-                                    isThreeLine: true,
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.receipt, color: AppTheme.saffron),
-                                          onPressed: () => Navigator.of(context).push(
-                                            MaterialPageRoute(builder: (_) => ReceiptPreviewScreen(bill: bill)),
-                                          ),
-                                          tooltip: 'Print',
-                                        ),
-                                        if (_currentUser?.isAdmin == true && bill.status == 'active') ...[
-                                          IconButton(
-                                            icon: const Icon(Icons.edit, color: Colors.blue),
-                                            onPressed: () => _editBillDialog(bill),
-                                            tooltip: 'Edit',
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.cancel_outlined, color: AppTheme.error),
-                                            onPressed: () => _cancelBill(bill),
-                                            tooltip: 'Cancel',
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
+                                  child: _buildResponsiveBillCard(bill, isVari),
                                 );
                               },
                             ),
@@ -289,6 +251,120 @@ class _DevoteeHistoryScreenState extends State<DevoteeHistoryScreen> {
         Text(label, style: const TextStyle(color: Colors.white70, fontSize: 11)),
       ],
     );
+  }
+
+  Widget _buildResponsiveBillCard(Bill bill, bool isVari) {
+    final isMobile = MediaQuery.of(context).size.width <= 600;
+    if (!isMobile) {
+      return ListTile(
+        leading: CircleAvatar(
+          backgroundColor: isVari ? AppTheme.lightOrange : AppTheme.gold.withOpacity(0.2),
+          child: Icon(
+            isVari ? Icons.request_quote : Icons.volunteer_activism,
+            color: isVari ? AppTheme.darkOrange : AppTheme.gold,
+            size: 20,
+          ),
+        ),
+        title: Text('${bill.billType} - ₹${bill.amount.toStringAsFixed(2)}',
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(
+          '${_formatDate(bill.billDate)} · ${bill.receiptNo}\n${bill.paymentMethod}${bill.category != null ? ' · ${bill.category}' : ''}',
+        ),
+        isThreeLine: true,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.receipt, color: AppTheme.saffron),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => ReceiptPreviewScreen(bill: bill)),
+              ),
+              tooltip: 'Print',
+            ),
+            if (_currentUser?.isAdmin == true && bill.status == 'active') ...[
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blue),
+                onPressed: () => _editBillDialog(bill),
+                tooltip: 'Edit',
+              ),
+              IconButton(
+                icon: const Icon(Icons.cancel_outlined, color: AppTheme.error),
+                onPressed: () => _cancelBill(bill),
+                tooltip: 'Cancel',
+              ),
+            ],
+          ],
+        ),
+      );
+    } else {
+      return Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: isVari ? AppTheme.lightOrange : AppTheme.gold.withOpacity(0.2),
+                  child: Icon(
+                    isVari ? Icons.request_quote : Icons.volunteer_activism,
+                    color: isVari ? AppTheme.darkOrange : AppTheme.gold,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${bill.billType} - ₹${bill.amount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${_formatDate(bill.billDate)} · ${bill.receiptNo}\n${bill.paymentMethod}${bill.category != null ? ' · ${bill.category}' : ''}',
+                        style: const TextStyle(fontSize: 13, color: Colors.black54),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  icon: const Icon(Icons.receipt, color: AppTheme.saffron, size: 18),
+                  label: Text(
+                    Translation.currentLanguage == 'ta' ? 'அச்சிடு' : 'Print',
+                    style: const TextStyle(color: AppTheme.saffron, fontSize: 13),
+                  ),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => ReceiptPreviewScreen(bill: bill)),
+                  ),
+                ),
+                if (_currentUser?.isAdmin == true && bill.status == 'active') ...[
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    icon: const Icon(Icons.edit, color: Colors.blue, size: 18),
+                    label: const Text('Edit', style: TextStyle(color: Colors.blue, fontSize: 13)),
+                    onPressed: () => _editBillDialog(bill),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    icon: const Icon(Icons.cancel_outlined, color: AppTheme.error, size: 18),
+                    label: const Text('Cancel', style: TextStyle(color: AppTheme.error, fontSize: 13)),
+                    onPressed: () => _cancelBill(bill),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   String _formatDate(DateTime date) {
