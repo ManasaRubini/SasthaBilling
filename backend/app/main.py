@@ -15,6 +15,27 @@ logger = logging.getLogger("uvicorn.error")
 Base.metadata.create_all(bind=engine)
 
 def run_idempotent_migration():
+    # Upgrade schema if needed
+    try:
+        from sqlalchemy import inspect, text
+        inspector = inspect(engine)
+        columns = [c['name'] for c in inspector.get_columns('bills')]
+        with engine.begin() as conn:
+            if 'pdf_storage_key' not in columns:
+                logger.info("Adding missing column 'pdf_storage_key' to bills table...")
+                conn.execute(text("ALTER TABLE bills ADD COLUMN pdf_storage_key VARCHAR(255)"))
+            if 'cancelled_at' not in columns:
+                logger.info("Adding missing column 'cancelled_at' to bills table...")
+                conn.execute(text("ALTER TABLE bills ADD COLUMN cancelled_at TIMESTAMP"))
+            if 'cancelled_by' not in columns:
+                logger.info("Adding missing column 'cancelled_by' to bills table...")
+                conn.execute(text("ALTER TABLE bills ADD COLUMN cancelled_by INTEGER"))
+            if 'cancellation_reason' not in columns:
+                logger.info("Adding missing column 'cancellation_reason' to bills table...")
+                conn.execute(text("ALTER TABLE bills ADD COLUMN cancellation_reason VARCHAR(255)"))
+    except Exception as e:
+        logger.error(f"Failed to auto-upgrade schema: {e}")
+
     db = SessionLocal()
     try:
         from app.models.models import Bill, FinancialTransaction, TransactionType, TransactionStatus

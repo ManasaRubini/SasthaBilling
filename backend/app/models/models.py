@@ -34,7 +34,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    bills = relationship("Bill", back_populates="staff")
+    bills = relationship("Bill", back_populates="staff", foreign_keys="[Bill.staff_id]")
 
 class Devotee(Base):
     __tablename__ = "devotees"

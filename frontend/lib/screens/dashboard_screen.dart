@@ -68,7 +68,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: Border.all(color: Colors.black.withOpacity(0.06)),
+        side: BorderSide(color: Colors.black.withOpacity(0.06)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
